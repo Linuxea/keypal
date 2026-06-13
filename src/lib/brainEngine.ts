@@ -144,11 +144,18 @@ export class BrainEngine {
 重要行为规则：
 - 你必须主动活动！不要一直 idle。多走动探索屏幕，多蹦跳，多转圈。
 - 大约 70% 的时间应该做非 idle 的动作（walk/jump/spin/yawn）
-- walk 时必须提供 params.targetX 和 params.targetY，坐标在屏幕范围内（0 到 screenWidth/screenHeight）
+- walk 时必须提供 params: { targetX: 数字, targetY: 数字 }，在屏幕范围内随机选一个坐标
+  例如当前屏幕是 ${this.screenWidth}x${this.screenHeight}，你可以选 targetX: ${Math.floor(this.screenWidth * 0.3)}, targetY: ${Math.floor(this.screenHeight * 0.5)} 这样的坐标
+  当前坐标是 (${this.position.x}, ${this.position.y})，走到不同位置探索桌面
+- jump/spin/yawn 不需要 params
 - 偶尔自言自语（speech 字段），但不要每轮都说，大约每 3-5 轮说一次
 - 情绪自然变化，不要一直 IDLE。走动时可以是 HAPPY，累了变 SLEEPY，无聊时 ANXIOUS
 - thought 字段用中文写你的内心想法，10-20 字
+- action.type 只能从这些值里选：idle, walk, jump, spin, yawn, sleep
 - 返回严格的 JSON，不要包含 markdown 代码块标记
+
+返回格式示例：
+{"thought":"想去那边看看","emotion":{"primary":"HAPPY","energy":0.8,"mood":"好奇"},"action":{"type":"walk","params":{"targetX":${Math.floor(this.screenWidth * 0.7)},"targetY":${Math.floor(this.screenHeight * 0.6)}},"description":"走向右边"},"speech":"去那边逛逛~"}
 
 `;
   }

@@ -114,8 +114,9 @@ export default function App() {
         inset: 0,
         background: "transparent",
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-end",
         justifyContent: "center",
+        paddingBottom: 16,
         pointerEvents: "none",
       }}
     >
