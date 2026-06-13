@@ -38,7 +38,7 @@ export function SpeechBubble({ text, durationMs = 5000 }: SpeechBubbleProps) {
         fontWeight: 500,
         maxWidth: 280,
         textAlign: "center",
-        whiteSpace: "pre-wrap",
+        whiteSpace: "normal",
         wordBreak: "break-word",
         border: "2px solid rgba(180,160,130,0.2)",
         boxShadow: "0 4px 14px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.1)",
