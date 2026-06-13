@@ -5,11 +5,13 @@ import { PetKind } from "../types";
 export interface AnimationRegistration {
   name: string;
   frameCount: number;
+  tint?: string;
   draw: (
     ctx: CanvasRenderingContext2D,
-    frame: number,
-    palette: PetPalette,
     frameIndex: number,
+    pet: PetKind,
+    frameInAnim: number,
+    palette: PetPalette,
   ) => void;
 }
 
@@ -27,6 +29,7 @@ export interface ActionRegistration {
   animation: string;
   duration: number;
   interruptible: boolean;
+  movement?: boolean;
   execute?: (ctx: ActionContext) => Promise<void>;
 }
 

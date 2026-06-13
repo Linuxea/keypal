@@ -45,8 +45,8 @@ export async function decideBehavior(
 
   const body = {
     model: config.model,
-    max_tokens: 300,
-    temperature: 0.8,
+    max_tokens: config.maxTokens,
+    temperature: config.temperature,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMsg },

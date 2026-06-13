@@ -17,10 +17,13 @@ function makeConfig(overrides: Partial<BrainConfig> = {}): BrainConfig {
       apiKey: "sk-test",
       model: "test-model",
       intervalSec: 30,
+      maxTokens: 300,
+      temperature: 0.8,
     },
     registry,
     intervalMs: 50,
     petName: "小咪",
+    pet: "cat",
     ...overrides,
   };
 }

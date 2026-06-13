@@ -11,15 +11,6 @@ export const PET_PALETTE: Record<PetKind, PetPalette> = {
 export const SPRITE_FRAME_WIDTH = 32;
 export const SPRITE_FRAME_HEIGHT = 32;
 
-const ANIMATION_TINT: Record<string, string> = {
-  idle: "transparent",
-  walk: "transparent",
-  jump: "#fff7a8",
-  spin: "#a8d8ff",
-  yawn: "#c9c9e0",
-  sleep: "#c9c9e0",
-};
-
 function fillFrame(ctx: CanvasRenderingContext2D, frameIndex: number, fill: string) {
   const x = frameIndex * SPRITE_FRAME_WIDTH;
   ctx.fillStyle = fill;
@@ -91,7 +82,7 @@ function drawEars(
   }
 }
 
-function drawIdleFrame(
+export function drawIdleFrame(
   ctx: CanvasRenderingContext2D,
   frameIndex: number,
   pet: PetKind,
@@ -117,7 +108,7 @@ function drawIdleFrame(
   }
 }
 
-function drawWalkFrame(
+export function drawWalkFrame(
   ctx: CanvasRenderingContext2D,
   frameIndex: number,
   pet: PetKind,
@@ -141,7 +132,7 @@ function drawWalkFrame(
   ctx.fillRect(cx + 1, cy + 7 - legOffset, 2, 3);
 }
 
-function drawJumpFrame(
+export function drawJumpFrame(
   ctx: CanvasRenderingContext2D,
   frameIndex: number,
   pet: PetKind,
@@ -170,7 +161,7 @@ function drawJumpFrame(
   ctx.fillRect(cx + 1, cy + 4, 1, 1);
 }
 
-function drawSpinFrame(
+export function drawSpinFrame(
   ctx: CanvasRenderingContext2D,
   frameIndex: number,
   pet: PetKind,
@@ -197,7 +188,7 @@ function drawSpinFrame(
   ctx.restore();
 }
 
-function drawYawnFrame(
+export function drawYawnFrame(
   ctx: CanvasRenderingContext2D,
   frameIndex: number,
   pet: PetKind,
@@ -223,7 +214,7 @@ function drawYawnFrame(
   }
 }
 
-function drawSleepFrame(
+export function drawSleepFrame(
   ctx: CanvasRenderingContext2D,
   frameIndex: number,
   pet: PetKind,
@@ -296,8 +287,8 @@ export function generateSpriteSheet(
   let frameIndex = 0;
 
   for (const anim of animations) {
-    const tint = ANIMATION_TINT[anim.name] ?? "transparent";
-    const drawer = ANIMATION_DRAWERS[anim.name];
+    const tint = anim.tint ?? "transparent";
+    const drawer = anim.draw ?? ANIMATION_DRAWERS[anim.name];
 
     for (let i = 0; i < anim.frameCount; i++) {
       if (tint !== "transparent") {
@@ -306,8 +297,6 @@ export function generateSpriteSheet(
 
       if (drawer) {
         drawer(ctx, frameIndex, pet, i, palette);
-      } else if (anim.draw) {
-        anim.draw(ctx, i, palette, frameIndex);
       } else {
         drawIdleFrame(ctx, frameIndex, pet, i, palette);
       }

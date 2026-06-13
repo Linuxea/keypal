@@ -1,4 +1,4 @@
-import { AIConfig } from "./types";
+import { AIConfig, PetKind } from "./types";
 import { decideBehavior } from "./aiClient";
 import { PluginRegistry } from "./plugins/registry";
 import { AIDecision, BehaviorContext } from "./plugins/types";
@@ -9,6 +9,7 @@ export interface BrainConfig {
   registry: PluginRegistry;
   intervalMs: number;
   petName: string;
+  pet: PetKind;
 }
 
 export type BrainCallback = (decision: AIDecision) => void;
@@ -87,7 +88,7 @@ export class BrainEngine {
       position: this.position,
       screenWidth: this.screenWidth,
       screenHeight: this.screenHeight,
-      pet: "cat",
+      pet: this.config.pet,
       petName: this.config.petName,
       timeSinceLastAction,
       decisionHistory: this.decisionHistory.slice(-10),
@@ -136,6 +137,21 @@ export class BrainEngine {
   }
 
   private buildBasePrompt(): string {
+    const actions = this.config.registry.getAllActions();
+    const emotions = this.config.registry.getAllEmotions();
+
+    const actionList = actions
+      .map((a) => {
+        const dur = a.duration > 0 ? `${(a.duration / 1000).toFixed(1)}秒` : "持续";
+        const interrupt = a.interruptible ? "可打断" : "不可打断";
+        return `- ${a.type}: ${interrupt}，${dur}`;
+      })
+      .join("\n");
+
+    const emotionList = emotions
+      .map((e) => `- ${e.name}: 能量 ${e.defaultEnergy}`)
+      .join("\n");
+
     return `你是一只桌面宠物，名字叫${this.config.petName}。你生活在用户的电脑桌面上，是一个透明窗口里的小精灵。
 你可以自由走动、蹦跳、转圈、打哈欠、睡觉。用户能看到你的动作和你说的话。
 
@@ -151,8 +167,14 @@ export class BrainEngine {
 - 偶尔自言自语（speech 字段），但不要每轮都说，大约每 3-5 轮说一次
 - 情绪自然变化，不要一直 IDLE。走动时可以是 HAPPY，累了变 SLEEPY，无聊时 ANXIOUS
 - thought 字段用中文写你的内心想法，10-20 字
-- action.type 只能从这些值里选：idle, walk, jump, spin, yawn, sleep
+- action.type 只能从以下值里选：${actions.map((a) => a.type).join(", ")}
 - 返回严格的 JSON，不要包含 markdown 代码块标记
+
+可用情绪：
+${emotionList}
+
+可用动作：
+${actionList}
 
 返回格式示例：
 {"thought":"想去那边看看","emotion":{"primary":"HAPPY","energy":0.8,"mood":"好奇"},"action":{"type":"walk","params":{"targetX":${Math.floor(this.screenWidth * 0.7)},"targetY":${Math.floor(this.screenHeight * 0.6)}},"description":"走向右边"},"speech":"去那边逛逛~"}

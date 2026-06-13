@@ -8,6 +8,8 @@ const mockConfig: AIConfig = {
   apiKey: "sk-test",
   model: "test-model",
   intervalSec: 30,
+  maxTokens: 300,
+  temperature: 0.8,
 };
 
 const mockContext: BehaviorContext = {
@@ -55,6 +57,8 @@ describe("decideBehavior", () => {
     expect(call[0]).toBe("https://api.example.com/v1/chat/completions");
     const body = JSON.parse(call[1].body);
     expect(body.model).toBe("test-model");
+    expect(body.max_tokens).toBe(300);
+    expect(body.temperature).toBe(0.8);
     expect(body.messages[0].role).toBe("system");
     expect(body.messages[0].content).toBe("test prompt");
     expect(body.messages[1].role).toBe("user");

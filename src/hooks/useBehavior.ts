@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { BrainEngine } from "../lib/brainEngine";
 import { PluginRegistry } from "../lib/plugins/registry";
-import { AIDecision, AnimationRegistration } from "../lib/plugins/types";
+import { AIDecision, AnimationRegistration, ActionRegistration } from "../lib/plugins/types";
 import { createRegistry } from "../lib/plugins";
 import { createWalkController, WalkController } from "../lib/walkController";
-import { AIConfig } from "../lib/types";
+import { AIConfig, PetKind } from "../lib/types";
 
 export interface BehaviorState {
   currentAnimation: string;
@@ -14,20 +14,27 @@ export interface BehaviorState {
   animations: AnimationRegistration[];
 }
 
-const LOCAL_ACTIONS = ["idle", "walk", "jump", "spin", "yawn"] as const;
+function getLocalActions(registry: PluginRegistry): ActionRegistration[] {
+  return registry.getAllActions().filter((a) => a.interruptible);
+}
 
-function randomAction(): { type: string; targetX?: number; targetY?: number } {
-  const type = LOCAL_ACTIONS[Math.floor(Math.random() * LOCAL_ACTIONS.length)];
-  if (type === "walk") {
+function isMovementAction(registry: PluginRegistry, actionType: string): boolean {
+  return registry.getAction(actionType)?.movement === true;
+}
+
+function randomAction(registry: PluginRegistry): { type: string; targetX?: number; targetY?: number } {
+  const actions = getLocalActions(registry);
+  const action = actions[Math.floor(Math.random() * actions.length)];
+  if (action.movement) {
     const margin = 100;
     const targetX = margin + Math.floor(Math.random() * (window.screen.width - margin * 2));
     const targetY = margin + Math.floor(Math.random() * (window.screen.height - margin * 2));
-    return { type, targetX, targetY };
+    return { type: action.type, targetX, targetY };
   }
-  return { type };
+  return { type: action.type };
 }
 
-export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
+export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: string = "小咪") {
   const registryRef = useRef<PluginRegistry>(createRegistry());
   const brainRef = useRef<BrainEngine | null>(null);
   const walkRef = useRef<WalkController | null>(null);
@@ -56,7 +63,7 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
     const actionType = decision.action.type;
     let flipX = false;
 
-    if (actionType === "walk") {
+    if (isMovementAction(registryRef.current, actionType)) {
       walkRef.current?.stop();
       const targetX = decision.action.params?.targetX as number | undefined;
       const targetY = decision.action.params?.targetY as number | undefined;
@@ -80,22 +87,24 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
   const applyLocalDecision = useCallback((action: ReturnType<typeof randomAction>) => {
     walkRef.current?.stop();
 
-    if (action.type === "walk" && action.targetX !== undefined && action.targetY !== undefined) {
+    if (isMovementAction(registryRef.current, action.type) && action.targetX !== undefined && action.targetY !== undefined) {
       const flipX = action.targetX < lastPosRef.current.x;
       walkRef.current?.start(action.targetX, action.targetY);
       setState((prev) => ({
         ...prev,
-        currentAnimation: "walk",
+        currentAnimation: action.type,
         currentSpeech: null,
         energy: 0.6,
         flipX,
       }));
     } else {
+      const emotions = registryRef.current.getAllEmotions();
+      const emotion = emotions.find((e) => e.name === "HAPPY");
       setState((prev) => ({
         ...prev,
         currentAnimation: action.type,
         currentSpeech: null,
-        energy: action.type === "jump" ? 0.9 : action.type === "yawn" ? 0.3 : 0.5,
+        energy: emotion?.defaultEnergy ?? 0.5,
         flipX: false,
       }));
     }
@@ -136,6 +145,7 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
       registry,
       intervalMs: aiConfigRef.current.intervalSec * 1000,
       petName,
+      pet,
     });
 
     brain.onDecision((decision: AIDecision) => {
@@ -147,9 +157,9 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
     if (aiConfigRef.current.apiKey) {
       brain.start();
     } else {
-      applyLocalDecision(randomAction());
+      applyLocalDecision(randomAction(registry));
       localTimerRef.current = setInterval(() => {
-        applyLocalDecision(randomAction());
+        applyLocalDecision(randomAction(registry));
       }, aiConfigRef.current.intervalSec * 1000);
     }
 
@@ -178,9 +188,9 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
     if (aiConfig.apiKey) {
       brain.start();
     } else {
-      applyLocalDecision(randomAction());
+      applyLocalDecision(randomAction(registryRef.current));
       localTimerRef.current = setInterval(() => {
-        applyLocalDecision(randomAction());
+        applyLocalDecision(randomAction(registryRef.current));
       }, aiConfig.intervalSec * 1000);
     }
   }, [aiConfig.apiKey, aiConfig.intervalSec, applyLocalDecision]);

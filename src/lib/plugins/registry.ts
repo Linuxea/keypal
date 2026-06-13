@@ -5,6 +5,7 @@ import {
   BehaviorContext,
   EmotionRegistration,
   PetPlugin,
+  PluginRegistryLike,
 } from "./types";
 
 export class PluginRegistry {
@@ -12,6 +13,18 @@ export class PluginRegistry {
   private animations = new Map<string, AnimationRegistration>();
   private actions = new Map<string, ActionRegistration>();
   private emotions = new Map<string, EmotionRegistration>();
+
+  private pluginContext: PluginRegistryLike = {
+    getAnimation: (name) => this.animations.get(name),
+    getAction: (type) => this.actions.get(type),
+    getEmotion: (name) => this.emotions.get(name),
+    getAllAnimations: () => [...this.animations.values()],
+    getAllActions: () => [...this.actions.values()],
+    getAllEmotions: () => [...this.emotions.values()],
+    buildSystemPrompt: () => this.buildSystemPrompt(),
+    buildContext: (base) => this.buildContext(base),
+    executeDecision: (decision) => this.executeDecision(decision),
+  };
 
   register(plugin: PetPlugin): void {
     if (this.plugins.has(plugin.id)) {
@@ -62,11 +75,19 @@ export class PluginRegistry {
     }
 
     this.plugins.set(plugin.id, plugin);
+
+    if (plugin.onLoad) {
+      void plugin.onLoad({ registry: this.pluginContext });
+    }
   }
 
   unregister(pluginId: string): void {
     const plugin = this.plugins.get(pluginId);
     if (!plugin) return;
+
+    if (plugin.onUnload) {
+      void plugin.onUnload();
+    }
 
     if (plugin.animations) {
       for (const anim of plugin.animations) {

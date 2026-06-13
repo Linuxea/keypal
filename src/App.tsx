@@ -13,6 +13,7 @@ import {
   DEFAULT_CONFIG,
   PetKind,
   PetSize,
+  windowSizeForPet,
 } from "./lib/types";
 
 export default function App() {
@@ -25,7 +26,7 @@ export default function App() {
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const behavior = useBehavior(config.ai);
+  const behavior = useBehavior(config.ai, config.pet);
 
   useEffect(() => {
     (async () => {
@@ -43,8 +44,7 @@ export default function App() {
             new win.LogicalPosition(cfg.position.x, cfg.position.y),
           );
         }
-        const targetW = Math.max(cfg.petSize + 32, 300);
-        const targetH = cfg.petSize + 32 + 100;
+        const { width: targetW, height: targetH } = windowSizeForPet(cfg.petSize);
         if (Math.abs(winSize.toLogical(factor).width - targetW) > 2) {
           await w.setSize(
             new win.LogicalSize(targetW, targetH),
@@ -64,8 +64,7 @@ export default function App() {
       try {
         const win = await import("@tauri-apps/api/window");
         const w = win.getCurrentWindow();
-        const targetW = Math.max(config.petSize + 32, 300);
-        const targetH = config.petSize + 32 + 100;
+        const { width: targetW, height: targetH } = windowSizeForPet(config.petSize);
         await w.setSize(new win.LogicalSize(targetW, targetH));
       } catch (err) {
         console.warn("[keypal] resize failed", err);

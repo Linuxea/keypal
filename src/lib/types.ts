@@ -1,7 +1,5 @@
 export type PetKind = "cat" | "dog" | "frog" | "chick";
 
-export type MoodState = "IDLE" | "HAPPY" | "FOCUSED" | "ANXIOUS" | "SLEEPY";
-
 export const PET_KINDS: PetKind[] = ["cat", "dog", "frog", "chick"];
 
 export const PET_LABELS: Record<PetKind, string> = {
@@ -18,22 +16,6 @@ export const PET_EMOJI: Record<PetKind, string> = {
   chick: "🐔",
 };
 
-export const MOOD_STATES: MoodState[] = [
-  "IDLE",
-  "HAPPY",
-  "FOCUSED",
-  "ANXIOUS",
-  "SLEEPY",
-];
-
-export const MOOD_LABELS: Record<MoodState, string> = {
-  IDLE: "待机",
-  HAPPY: "开心",
-  FOCUSED: "专注",
-  ANXIOUS: "焦虑",
-  SLEEPY: "困倦",
-};
-
 export const PET_SIZE_OPTIONS = [64, 96, 128] as const;
 export type PetSize = (typeof PET_SIZE_OPTIONS)[number];
 
@@ -45,6 +27,8 @@ export interface AIConfig {
   apiKey: string;
   model: string;
   intervalSec: IntervalSec;
+  maxTokens: number;
+  temperature: number;
 }
 
 export interface AppConfig {
@@ -63,27 +47,21 @@ export const DEFAULT_CONFIG: AppConfig = {
     apiKey: "",
     model: "deepseek-chat",
     intervalSec: 5,
+    maxTokens: 300,
+    temperature: 0.8,
   },
 };
 
 export const SPRITE_FRAME_WIDTH = 32;
 export const SPRITE_FRAME_HEIGHT = 32;
-export const FRAMES_PER_STATE = 4;
-export const STATE_COUNT = 5;
-export const SPRITE_TOTAL_FRAMES = STATE_COUNT * FRAMES_PER_STATE;
-export const SPRITE_SHEET_WIDTH = SPRITE_TOTAL_FRAMES * SPRITE_FRAME_WIDTH;
-export const SPRITE_SHEET_HEIGHT = SPRITE_FRAME_HEIGHT;
 
-export const MOOD_FRAME_OFFSET: Record<MoodState, number> = {
-  IDLE: 0,
-  HAPPY: 4,
-  FOCUSED: 8,
-  ANXIOUS: 12,
-  SLEEPY: 16,
-};
+export const SPEECH_BUBBLE_HEIGHT = 100;
+export const WINDOW_PADDING = 32;
+export const MIN_WINDOW_WIDTH = 300;
 
-export interface MoodStateSnapshot {
-  current: MoodState;
-  energy: number;
-  since: number;
+export function windowSizeForPet(petSize: PetSize): { width: number; height: number } {
+  return {
+    width: Math.max(petSize + WINDOW_PADDING, MIN_WINDOW_WIDTH),
+    height: petSize + WINDOW_PADDING + SPEECH_BUBBLE_HEIGHT,
+  };
 }

@@ -1,4 +1,12 @@
 import { PetPlugin } from "../types";
+import {
+  drawIdleFrame,
+  drawWalkFrame,
+  drawJumpFrame,
+  drawSpinFrame,
+  drawYawnFrame,
+  drawSleepFrame,
+} from "../../spriteGenerator";
 
 export const actionPlugin: PetPlugin = {
   id: "action-core",
@@ -7,17 +15,17 @@ export const actionPlugin: PetPlugin = {
   dependencies: ["emotion-core"],
 
   animations: [
-    { name: "idle", frameCount: 4, draw: () => {} },
-    { name: "walk", frameCount: 4, draw: () => {} },
-    { name: "jump", frameCount: 4, draw: () => {} },
-    { name: "spin", frameCount: 4, draw: () => {} },
-    { name: "yawn", frameCount: 4, draw: () => {} },
-    { name: "sleep", frameCount: 4, draw: () => {} },
+    { name: "idle", frameCount: 4, draw: drawIdleFrame },
+    { name: "walk", frameCount: 4, draw: drawWalkFrame },
+    { name: "jump", frameCount: 4, tint: "#fff7a8", draw: drawJumpFrame },
+    { name: "spin", frameCount: 4, tint: "#a8d8ff", draw: drawSpinFrame },
+    { name: "yawn", frameCount: 4, tint: "#c9c9e0", draw: drawYawnFrame },
+    { name: "sleep", frameCount: 4, tint: "#c9c9e0", draw: drawSleepFrame },
   ],
 
   actions: [
     { type: "idle", animation: "idle", duration: 3000, interruptible: true },
-    { type: "walk", animation: "walk", duration: 0, interruptible: true },
+    { type: "walk", animation: "walk", duration: 0, interruptible: true, movement: true },
     { type: "jump", animation: "jump", duration: 1500, interruptible: true },
     { type: "spin", animation: "spin", duration: 2000, interruptible: true },
     { type: "yawn", animation: "yawn", duration: 2500, interruptible: true },
