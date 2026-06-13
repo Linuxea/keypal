@@ -37,7 +37,7 @@ export const MOOD_LABELS: Record<MoodState, string> = {
 export const PET_SIZE_OPTIONS = [64, 96, 128] as const;
 export type PetSize = (typeof PET_SIZE_OPTIONS)[number];
 
-export const INTERVAL_OPTIONS = [15, 30, 60] as const;
+export const INTERVAL_OPTIONS = [5, 10, 30] as const;
 export type IntervalSec = (typeof INTERVAL_OPTIONS)[number];
 
 export interface AIConfig {
@@ -62,7 +62,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     baseUrl: "https://api.deepseek.com",
     apiKey: "",
     model: "deepseek-chat",
-    intervalSec: 30,
+    intervalSec: 5,
   },
 };
 

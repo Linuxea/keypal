@@ -44,7 +44,7 @@ export default function App() {
           );
         }
         const targetW = cfg.petSize + 32;
-        const targetH = cfg.petSize + 32 + 60;
+        const targetH = cfg.petSize + 32 + 100;
         if (Math.abs(winSize.toLogical(factor).width - targetW) > 2) {
           await w.setSize(
             new win.LogicalSize(targetW, targetH),
@@ -65,7 +65,7 @@ export default function App() {
         const win = await import("@tauri-apps/api/window");
         const w = win.getCurrentWindow();
         const targetW = config.petSize + 32;
-        const targetH = config.petSize + 32 + 60;
+        const targetH = config.petSize + 32 + 100;
         await w.setSize(new win.LogicalSize(targetW, targetH));
       } catch (err) {
         console.warn("[keypal] resize failed", err);

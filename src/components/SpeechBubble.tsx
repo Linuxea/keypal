@@ -27,20 +27,24 @@ export function SpeechBubble({ text, durationMs = 5000 }: SpeechBubbleProps) {
         bottom: "100%",
         left: "50%",
         transform: "translateX(-50%)",
-        marginBottom: 4,
-        background: "rgba(255,255,255,0.95)",
-        color: "#222",
-        padding: "6px 12px",
-        borderRadius: 10,
-        fontSize: 12,
-        fontFamily: "system-ui, sans-serif",
-        maxWidth: 200,
+        marginBottom: 6,
+        background: "rgba(252,248,240,0.97)",
+        color: "#3a3226",
+        padding: "8px 16px",
+        borderRadius: 16,
+        fontSize: 13,
+        lineHeight: 1.5,
+        fontFamily: "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif",
+        fontWeight: 500,
+        maxWidth: 280,
         textAlign: "center",
         whiteSpace: "pre-wrap",
         wordBreak: "break-word",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        border: "2px solid rgba(180,160,130,0.2)",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.1)",
         pointerEvents: "none",
         zIndex: 100,
+        animation: "keypal-bubble-in 0.2s ease-out",
       }}
     >
       {currentText}
@@ -52,9 +56,23 @@ export function SpeechBubble({ text, durationMs = 5000 }: SpeechBubbleProps) {
           transform: "translateX(-50%)",
           width: 0,
           height: 0,
-          borderLeft: "6px solid transparent",
-          borderRight: "6px solid transparent",
-          borderTop: "6px solid rgba(255,255,255,0.95)",
+          borderLeft: "8px solid transparent",
+          borderRight: "8px solid transparent",
+          borderTop: "8px solid rgba(252,248,240,0.97)",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: "calc(100% - 2px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 0,
+          height: 0,
+          borderLeft: "10px solid transparent",
+          borderRight: "10px solid transparent",
+          borderTop: "10px solid rgba(180,160,130,0.2)",
+          zIndex: -1,
         }}
       />
     </div>
