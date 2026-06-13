@@ -43,7 +43,7 @@ export default function App() {
             new win.LogicalPosition(cfg.position.x, cfg.position.y),
           );
         }
-        const targetW = cfg.petSize + 32;
+        const targetW = Math.max(cfg.petSize + 32, 300);
         const targetH = cfg.petSize + 32 + 100;
         if (Math.abs(winSize.toLogical(factor).width - targetW) > 2) {
           await w.setSize(
@@ -64,7 +64,7 @@ export default function App() {
       try {
         const win = await import("@tauri-apps/api/window");
         const w = win.getCurrentWindow();
-        const targetW = config.petSize + 32;
+        const targetW = Math.max(config.petSize + 32, 300);
         const targetH = config.petSize + 32 + 100;
         await w.setSize(new win.LogicalSize(targetW, targetH));
       } catch (err) {
