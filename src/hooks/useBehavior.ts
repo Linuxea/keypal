@@ -33,6 +33,8 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
   const walkRef = useRef<WalkController | null>(null);
   const localTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const aiConfigRef = useRef(aiConfig);
+  aiConfigRef.current = aiConfig;
 
   const [state, setState] = useState<BehaviorState>({
     currentAnimation: "idle",
@@ -130,9 +132,9 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
     initWalk();
 
     const brain = new BrainEngine({
-      ai: aiConfig,
+      ai: aiConfigRef.current,
       registry,
-      intervalMs: aiConfig.intervalSec * 1000,
+      intervalMs: aiConfigRef.current.intervalSec * 1000,
       petName,
     });
 
@@ -142,12 +144,13 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
 
     brainRef.current = brain;
 
-    if (aiConfig.apiKey) {
+    if (aiConfigRef.current.apiKey) {
       brain.start();
     } else {
+      applyLocalDecision(randomAction());
       localTimerRef.current = setInterval(() => {
         applyLocalDecision(randomAction());
-      }, aiConfig.intervalSec * 1000);
+      }, aiConfigRef.current.intervalSec * 1000);
     }
 
     return () => {
@@ -157,7 +160,28 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
       }
       walkRef.current?.stop();
     };
-  }, [aiConfig, petName, applyDecision, applyLocalDecision]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const brain = brainRef.current;
+    if (!brain) return;
+
+    brain.stop();
+    if (localTimerRef.current) {
+      clearInterval(localTimerRef.current);
+      localTimerRef.current = null;
+    }
+
+    if (aiConfig.apiKey) {
+      brain.start();
+    } else {
+      applyLocalDecision(randomAction());
+      localTimerRef.current = setInterval(() => {
+        applyLocalDecision(randomAction());
+      }, aiConfig.intervalSec * 1000);
+    }
+  }, [aiConfig.apiKey, aiConfig.intervalSec, applyLocalDecision]);
 
   const setPosition = useCallback((x: number, y: number) => {
     lastPosRef.current = { x, y };

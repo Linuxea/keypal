@@ -14,7 +14,7 @@ vi.mock("@tauri-apps/api/window", () => ({
 
 const mockAiConfig: AIConfig = {
   baseUrl: "https://api.example.com",
-  apiKey: "",
+  apiKey: "sk-test",
   model: "test-model",
   intervalSec: 30,
 };
@@ -49,7 +49,8 @@ describe("useBehavior", () => {
 
   it("starts local fallback when no api key", async () => {
     vi.useFakeTimers();
-    const { result } = renderHook(() => useBehavior(mockAiConfig, "小咪"));
+    const noKeyConfig: AIConfig = { ...mockAiConfig, apiKey: "" };
+    const { result } = renderHook(() => useBehavior(noKeyConfig, "小咪"));
 
     act(() => {
       vi.advanceTimersByTime(31000);
