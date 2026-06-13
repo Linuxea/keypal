@@ -16,7 +16,7 @@ npm run dev          # Vite dev server (port 1420, strict)
 npm run build        # tsc && vite build
 npm run tauri dev    # Tauri dev (auto-starts Vite)
 npm run tauri build  # Tauri production build
-npm test             # vitest run (83 tests)
+npm test             # vitest run (84 tests)
 npm run test:watch   # vitest (watch mode)
 ```
 
@@ -61,13 +61,17 @@ src/
 ## AI Decision Pipeline
 
 ```
-Timer (10s) → buildContext() → buildSystemPrompt() → AI API → onDecision chain → executeDecision()
-                                                                                    ├── emotion update
-                                                                                    ├── action execute (walk=move window)
-                                                                                    └── speech bubble
+Timer (5s default) → buildBasePrompt() + registry.buildSystemPrompt() → AI API → onDecision chain → executeDecision()
+                                                                                              ├── emotion update
+                                                                                              ├── action execute (walk=move window)
+                                                                                              └── speech bubble
 ```
 
 AI returns JSON: `{ thought, emotion: { primary, energy, mood }, action: { type, params?, description }, speech }`
+
+- `brainEngine.buildBasePrompt()` injects pet personality + behavioral rules (be active, 70% non-idle, walk coordinate examples using current screen dimensions).
+- `brainEngine.updateAi()` hot-swaps AI config without recreating the engine — used when user changes settings.
+- When no API key: `useBehavior` falls back to local random actions (walk/jump/spin/yawn) on the same interval — no AI calls.
 
 ## Plugin System
 
@@ -81,12 +85,13 @@ Plugins implement `PetPlugin` interface with hooks into 5 pipeline stages:
 
 ## Key details
 
-- **Window**: transparent, undecorated, always-on-top, skip-taskbar, `focus: false`. Size = `petSize + 32`.
+- **Window**: transparent, undecorated, always-on-top, skip-taskbar, `focus: false`. Width = `Math.max(petSize + 32, 300)` (min 300px for speech bubble). Height = `petSize + 32 + 100` (extra 100px for bubble above pet).
 - **Capabilities**: Tauri v2 uses `src-tauri/capabilities/default.json` (not allowlist).
 - **Store**: `settings.json` via `@tauri-apps/plugin-store`. Config key is `"config"`.
 - **Sprites**: dynamically generated from plugin animations, 32×32 frames, cached per pet+animation combo. Flip horizontally for left/right direction.
 - **Drag**: uses Tauri `startDragging()`, persists logical position via store on mouseup/blur.
 - **Walk**: `walkController.ts` uses RAF loop with generation counter to prevent stale callbacks.
+- **SpeechBubble**: rendered in a full-window-width flex container (NOT inside the narrow pet wrapper) to avoid shrink-to-fit width constraints.
 
 ## Gotchas
 
@@ -98,3 +103,5 @@ Plugins implement `PetPlugin` interface with hooks into 5 pipeline stages:
 - jsdom doesn't support `canvas.getContext("2d")` — `test-setup.ts` provides a stub.
 - BrainEngine tests use real timers (fake timers + async fetch is unreliable).
 - Plugin `action-core` depends on `emotion-core` — register order matters.
+- `useBehavior` uses `aiConfigRef` (useRef) + `[]` dependency on main useEffect to avoid re-creating BrainEngine on every render. A separate effect watches `aiConfig.apiKey`/`intervalSec` and calls `brain.updateAi()` + restart.
+- SpeechBubble must NOT be placed inside the pet wrapper div — the wrapper is only `petSize` px wide, causing absolute-positioned children to shrink-to-fit to ~48px (vertical text bug).
