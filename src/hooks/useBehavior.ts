@@ -173,6 +173,8 @@ export function useBehavior(aiConfig: AIConfig, petName: string = "小咪") {
       localTimerRef.current = null;
     }
 
+    brain.updateAi(aiConfig);
+
     if (aiConfig.apiKey) {
       brain.start();
     } else {

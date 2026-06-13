@@ -32,6 +32,10 @@ export class BrainEngine {
     this.config = config;
   }
 
+  updateAi(ai: AIConfig): void {
+    this.config.ai = ai;
+  }
+
   setPosition(x: number, y: number): void {
     this.position = { x, y };
   }
@@ -90,7 +94,8 @@ export class BrainEngine {
     };
 
     const context = this.config.registry.buildContext(baseContext);
-    const systemPrompt = this.config.registry.buildSystemPrompt();
+    const pluginPrompt = this.config.registry.buildSystemPrompt();
+    const systemPrompt = this.buildBasePrompt() + pluginPrompt;
 
     try {
       const decision = await decideBehavior(
@@ -128,5 +133,23 @@ export class BrainEngine {
 
   getCurrentEnergy(): number {
     return this.currentEnergy;
+  }
+
+  private buildBasePrompt(): string {
+    return `你是一只桌面宠物，名字叫${this.config.petName}。你生活在用户的电脑桌面上，是一个透明窗口里的小精灵。
+你可以自由走动、蹦跳、转圈、打哈欠、睡觉。用户能看到你的动作和你说的话。
+
+你的性格：好奇、活泼、有点懒、偶尔话多、像一只真的小猫。
+
+重要行为规则：
+- 你必须主动活动！不要一直 idle。多走动探索屏幕，多蹦跳，多转圈。
+- 大约 70% 的时间应该做非 idle 的动作（walk/jump/spin/yawn）
+- walk 时必须提供 params.targetX 和 params.targetY，坐标在屏幕范围内（0 到 screenWidth/screenHeight）
+- 偶尔自言自语（speech 字段），但不要每轮都说，大约每 3-5 轮说一次
+- 情绪自然变化，不要一直 IDLE。走动时可以是 HAPPY，累了变 SLEEPY，无聊时 ANXIOUS
+- thought 字段用中文写你的内心想法，10-20 字
+- 返回严格的 JSON，不要包含 markdown 代码块标记
+
+`;
   }
 }
