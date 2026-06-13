@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Pet } from "./components/Pet";
 import { ContextMenu } from "./components/ContextMenu";
 import { SettingsPanel } from "./components/SettingsPanel";
-import { useKeyboardData } from "./hooks/useKeyboardData";
 import { useDrag } from "./hooks/useDrag";
 import { configStore } from "./lib/config";
 import { appendLogRaw } from "./lib/log";
@@ -10,26 +9,24 @@ import {
   AIConfig,
   AppConfig,
   DEFAULT_CONFIG,
-  MoodStateSnapshot,
   PetKind,
   PetSize,
 } from "./lib/types";
+import { AnimationRegistration } from "./lib/plugins/types";
 
 export default function App() {
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [loaded, setLoaded] = useState(false);
-  const [mood, setMood] = useState<MoodStateSnapshot>({
-    current: "IDLE",
-    energy: 0.6,
-    since: Date.now(),
-  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [logLine, setLogLine] = useState<string>("");
+
+  const stubAnimations: AnimationRegistration[] = [
+    { name: "idle", frameCount: 4, draw: () => {} },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -73,21 +70,6 @@ export default function App() {
       }
     })();
   }, [config.petSize, loaded]);
-
-  const onMoodChange = useCallback((m: MoodStateSnapshot) => {
-    setMood(m);
-  }, []);
-
-  const onAnalysisLog = useCallback((msg: string) => {
-    setLogLine(msg);
-    console.log("[mood]", msg);
-  }, []);
-
-  useKeyboardData({
-    config,
-    onMoodChange,
-    onAnalysisLog,
-  });
 
   const { startDrag } = useDrag({});
 
@@ -138,8 +120,11 @@ export default function App() {
       <div style={{ pointerEvents: "auto" }}>
         <Pet
           pet={config.pet}
-          mood={mood}
+          animations={stubAnimations}
+          currentAnimation="idle"
+          energy={0.5}
           size={config.petSize}
+          flipX={false}
           onContextMenu={onContextMenu}
           onMouseDown={(e) => {
             if (e.button === 0) {
@@ -147,24 +132,6 @@ export default function App() {
             }
           }}
         />
-      </div>
-
-      <div
-        style={{
-          position: "fixed",
-          left: 4,
-          bottom: 2,
-          fontSize: 9,
-          color: "rgba(180,180,180,0.5)",
-          fontFamily: "monospace",
-          pointerEvents: "none",
-          whiteSpace: "nowrap",
-          maxWidth: "100%",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {mood.current.toLowerCase()} · {logLine}
       </div>
 
       <ContextMenu

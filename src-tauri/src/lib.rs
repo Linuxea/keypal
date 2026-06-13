@@ -1,5 +1,4 @@
 mod commands;
-mod keylistener;
 
 use tauri::{Manager, PhysicalPosition, WindowEvent};
 
@@ -39,7 +38,6 @@ pub fn run() {
             }
 
             let app_handle = app.handle().clone();
-            keylistener::start(app_handle.clone());
 
             let _main_window = main_window;
             let _ = app_handle;

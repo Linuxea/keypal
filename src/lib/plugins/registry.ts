@@ -1,0 +1,163 @@
+import {
+  ActionRegistration,
+  AIDecision,
+  AnimationRegistration,
+  BehaviorContext,
+  EmotionRegistration,
+  PetPlugin,
+} from "./types";
+
+export class PluginRegistry {
+  private plugins = new Map<string, PetPlugin>();
+  private animations = new Map<string, AnimationRegistration>();
+  private actions = new Map<string, ActionRegistration>();
+  private emotions = new Map<string, EmotionRegistration>();
+
+  register(plugin: PetPlugin): void {
+    if (this.plugins.has(plugin.id)) {
+      throw new Error(`Plugin "${plugin.id}" is already registered`);
+    }
+
+    if (plugin.dependencies) {
+      for (const dep of plugin.dependencies) {
+        if (!this.plugins.has(dep)) {
+          throw new Error(
+            `Plugin "${plugin.id}" depends on "${dep}" which is not registered`,
+          );
+        }
+      }
+    }
+
+    if (plugin.animations) {
+      for (const anim of plugin.animations) {
+        if (this.animations.has(anim.name)) {
+          throw new Error(
+            `Animation "${anim.name}" already registered by another plugin`,
+          );
+        }
+        this.animations.set(anim.name, anim);
+      }
+    }
+
+    if (plugin.actions) {
+      for (const action of plugin.actions) {
+        if (this.actions.has(action.type)) {
+          throw new Error(
+            `Action "${action.type}" already registered by another plugin`,
+          );
+        }
+        this.actions.set(action.type, action);
+      }
+    }
+
+    if (plugin.emotions) {
+      for (const emotion of plugin.emotions) {
+        if (this.emotions.has(emotion.name)) {
+          throw new Error(
+            `Emotion "${emotion.name}" already registered by another plugin`,
+          );
+        }
+        this.emotions.set(emotion.name, emotion);
+      }
+    }
+
+    this.plugins.set(plugin.id, plugin);
+  }
+
+  unregister(pluginId: string): void {
+    const plugin = this.plugins.get(pluginId);
+    if (!plugin) return;
+
+    if (plugin.animations) {
+      for (const anim of plugin.animations) {
+        this.animations.delete(anim.name);
+      }
+    }
+    if (plugin.actions) {
+      for (const action of plugin.actions) {
+        this.actions.delete(action.type);
+      }
+    }
+    if (plugin.emotions) {
+      for (const emotion of plugin.emotions) {
+        this.emotions.delete(emotion.name);
+      }
+    }
+
+    this.plugins.delete(pluginId);
+  }
+
+  getAnimation(name: string): AnimationRegistration | undefined {
+    return this.animations.get(name);
+  }
+
+  getAction(type: string): ActionRegistration | undefined {
+    return this.actions.get(type);
+  }
+
+  getEmotion(name: string): EmotionRegistration | undefined {
+    return this.emotions.get(name);
+  }
+
+  getAllAnimations(): AnimationRegistration[] {
+    return [...this.animations.values()];
+  }
+
+  getAllActions(): ActionRegistration[] {
+    return [...this.actions.values()];
+  }
+
+  getAllEmotions(): EmotionRegistration[] {
+    return [...this.emotions.values()];
+  }
+
+  getPlugin(id: string): PetPlugin | undefined {
+    return this.plugins.get(id);
+  }
+
+  buildSystemPrompt(): string {
+    let prompt = "";
+
+    for (const plugin of this.plugins.values()) {
+      if (plugin.augmentSystemPrompt) {
+        prompt = plugin.augmentSystemPrompt(prompt);
+      }
+    }
+
+    return prompt;
+  }
+
+  buildContext(base: BehaviorContext): BehaviorContext {
+    let ctx = { ...base };
+
+    for (const plugin of this.plugins.values()) {
+      if (plugin.augmentContext) {
+        ctx = plugin.augmentContext(ctx);
+      }
+    }
+
+    return ctx;
+  }
+
+  async executeDecision(decision: AIDecision): Promise<void> {
+    let current = decision;
+
+    for (const plugin of this.plugins.values()) {
+      if (plugin.onDecision) {
+        const result = plugin.onDecision(current);
+        if (result === null) return;
+        current = result;
+      }
+    }
+
+    const action = this.actions.get(current.action.type);
+    if (action?.execute) {
+      await action.execute({
+        targetX: current.action.params?.targetX as number | undefined,
+        targetY: current.action.params?.targetY as number | undefined,
+        description: current.action.description,
+        params: current.action.params,
+      });
+    }
+  }
+}

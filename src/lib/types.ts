@@ -40,8 +40,6 @@ export type PetSize = (typeof PET_SIZE_OPTIONS)[number];
 export const INTERVAL_OPTIONS = [15, 30, 60] as const;
 export type IntervalSec = (typeof INTERVAL_OPTIONS)[number];
 
-export type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
-
 export interface AIConfig {
   baseUrl: string;
   apiKey: string;
@@ -68,48 +66,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   },
 };
 
-export interface KeyEventPayload {
-  key: string;
-  timestamp: number;
-  isBackspace: boolean;
-  isChar: boolean;
-  char: string | null;
-}
-
-export interface TypingSession {
-  chars: string[];
-  backspaceCount: number;
-  keyTimestamps: number[];
-  lastKeyTime: number;
-  pauseCount: number;
-}
-
-export interface TypingMetrics {
-  wpm: number;
-  backspaceRate: number;
-  avgKeyInterval: number;
-  pauseCount: number;
-  charCount: number;
-  durationMs: number;
-}
-
-export interface MoodAnalysisRequest {
-  text: string;
-  typingMetrics: TypingMetrics;
-}
-
-export interface MoodAnalysisResponse {
-  state: MoodState;
-  energy: number;
-  reason: string;
-}
-
-export interface MoodStateSnapshot {
-  current: MoodState;
-  energy: number;
-  since: number;
-}
-
 export const SPRITE_FRAME_WIDTH = 32;
 export const SPRITE_FRAME_HEIGHT = 32;
 export const FRAMES_PER_STATE = 4;
@@ -126,6 +82,8 @@ export const MOOD_FRAME_OFFSET: Record<MoodState, number> = {
   SLEEPY: 16,
 };
 
-export const SLEEPY_TIMEOUT_MS = 120_000;
-export const MAX_ANALYSIS_TEXT_LEN = 500;
-export const ANALYSIS_CHAR_THRESHOLD = 100;
+export interface MoodStateSnapshot {
+  current: MoodState;
+  energy: number;
+  since: number;
+}

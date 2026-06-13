@@ -1,26 +1,34 @@
-import { MoodState } from "./types";
-import { FRAMES_PER_STATE, MOOD_FRAME_OFFSET } from "./types";
+import { AnimationRegistration } from "./plugins/types";
+import { getAnimationFrameRange } from "./spriteGenerator";
 
 export interface SpriteController {
   getFrameIndex(): number;
-  setFrame(state: MoodState, frameInState: number): void;
+  setAnimation(name: string): void;
   tick(now: number, energy: number): { frameIndex: number; changed: boolean };
   reset(): void;
 }
 
 export function createSpriteController(
+  animations: AnimationRegistration[],
   baseFps: number = 8,
 ): SpriteController {
   let currentFrame = 0;
   let lastTick = 0;
+  let currentAnim = "idle";
 
-  const stateStart = (state: MoodState) => MOOD_FRAME_OFFSET[state];
+  const getRange = (name: string) => getAnimationFrameRange(animations, name);
 
   return {
     getFrameIndex: () => currentFrame,
-    setFrame(state, frameInState) {
-      currentFrame = stateStart(state) + (frameInState % FRAMES_PER_STATE);
+
+    setAnimation(name) {
+      const range = getRange(name);
+      if (range) {
+        currentAnim = name;
+        currentFrame = range.start;
+      }
     },
+
     tick(now, energy) {
       const fps = Math.max(1, baseFps * Math.max(0.3, Math.min(1.0, energy)));
       const interval = 1000 / fps;
@@ -28,18 +36,22 @@ export function createSpriteController(
         return { frameIndex: currentFrame, changed: false };
       }
       lastTick = now;
-      const start = Math.floor(currentFrame / FRAMES_PER_STATE) * FRAMES_PER_STATE;
-      const offset = (currentFrame - start + 1) % FRAMES_PER_STATE;
-      currentFrame = start + offset;
+
+      const range = getRange(currentAnim);
+      if (!range) {
+        currentFrame = 0;
+        return { frameIndex: 0, changed: true };
+      }
+
+      const offset = (currentFrame - range.start + 1) % range.count;
+      currentFrame = range.start + offset;
       return { frameIndex: currentFrame, changed: true };
     },
+
     reset() {
       currentFrame = 0;
       lastTick = 0;
+      currentAnim = "idle";
     },
   };
-}
-
-export function getFrameOffset(state: MoodState, frameInState: number): number {
-  return MOOD_FRAME_OFFSET[state] + (frameInState % FRAMES_PER_STATE);
 }
