@@ -3,9 +3,18 @@ import { renderHook, act } from "@testing-library/react";
 import { useBehavior } from "./useBehavior";
 import { AIConfig } from "../lib/types";
 
+vi.mock("@tauri-apps/api/window", () => ({
+  getCurrentWindow: () => ({
+    setPosition: vi.fn(),
+    outerPosition: () => Promise.resolve({ x: 100, y: 100 }),
+    scaleFactor: () => Promise.resolve(1),
+  }),
+  LogicalPosition: vi.fn(),
+}));
+
 const mockAiConfig: AIConfig = {
   baseUrl: "https://api.example.com",
-  apiKey: "sk-test",
+  apiKey: "",
   model: "test-model",
   intervalSec: 30,
 };
@@ -36,5 +45,18 @@ describe("useBehavior", () => {
       result.current.setPosition(100, 200);
       result.current.setScreenSize(1920, 1080);
     });
+  });
+
+  it("starts local fallback when no api key", async () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useBehavior(mockAiConfig, "小咪"));
+
+    act(() => {
+      vi.advanceTimersByTime(31000);
+    });
+
+    expect(result.current.currentAnimation).not.toBe("idle");
+
+    vi.useRealTimers();
   });
 });

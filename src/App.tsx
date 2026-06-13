@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Pet } from "./components/Pet";
 import { ContextMenu } from "./components/ContextMenu";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { SpeechBubble } from "./components/SpeechBubble";
+import { useBehavior } from "./hooks/useBehavior";
 import { useDrag } from "./hooks/useDrag";
 import { configStore } from "./lib/config";
 import { appendLogRaw } from "./lib/log";
@@ -12,7 +14,6 @@ import {
   PetKind,
   PetSize,
 } from "./lib/types";
-import { AnimationRegistration } from "./lib/plugins/types";
 
 export default function App() {
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
@@ -24,9 +25,7 @@ export default function App() {
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const stubAnimations: AnimationRegistration[] = [
-    { name: "idle", frameCount: 4, draw: () => {} },
-  ];
+  const behavior = useBehavior(config.ai);
 
   useEffect(() => {
     (async () => {
@@ -50,6 +49,7 @@ export default function App() {
             new win.LogicalSize(targetSize, targetSize),
           );
         }
+        behavior.setScreenSize(window.screen.width, window.screen.height);
       } catch (err) {
         console.warn("[keypal] window init failed", err);
       }
@@ -117,14 +117,15 @@ export default function App() {
         pointerEvents: "none",
       }}
     >
-      <div style={{ pointerEvents: "auto" }}>
+      <div style={{ pointerEvents: "auto", position: "relative" }}>
+        <SpeechBubble text={behavior.currentSpeech} />
         <Pet
           pet={config.pet}
-          animations={stubAnimations}
-          currentAnimation="idle"
-          energy={0.5}
+          animations={behavior.animations}
+          currentAnimation={behavior.currentAnimation}
+          energy={behavior.energy}
           size={config.petSize}
-          flipX={false}
+          flipX={behavior.flipX}
           onContextMenu={onContextMenu}
           onMouseDown={(e) => {
             if (e.button === 0) {
