@@ -120,8 +120,21 @@ export default function App() {
         pointerEvents: "none",
       }}
     >
-      <div style={{ pointerEvents: "auto", position: "relative" }}>
+      <div
+        style={{
+          position: "absolute",
+          bottom: config.petSize + 24,
+          left: 0,
+          right: 0,
+          display: "flex",
+          justifyContent: "center",
+          pointerEvents: "none",
+        }}
+      >
         <SpeechBubble text={behavior.currentSpeech} />
+      </div>
+
+      <div style={{ pointerEvents: "auto", position: "relative" }}>
         <Pet
           pet={config.pet}
           animations={behavior.animations}

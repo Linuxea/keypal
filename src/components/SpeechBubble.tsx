@@ -23,11 +23,6 @@ export function SpeechBubble({ text, durationMs = 5000 }: SpeechBubbleProps) {
   return (
     <div
       style={{
-        position: "absolute",
-        bottom: "100%",
-        left: "50%",
-        transform: "translateX(-50%)",
-        marginBottom: 6,
         background: "rgba(252,248,240,0.97)",
         color: "#3a3226",
         padding: "8px 16px",
@@ -45,6 +40,7 @@ export function SpeechBubble({ text, durationMs = 5000 }: SpeechBubbleProps) {
         pointerEvents: "none",
         zIndex: 100,
         animation: "keypal-bubble-in 0.2s ease-out",
+        position: "relative",
       }}
     >
       {currentText}
