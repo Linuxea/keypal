@@ -6,8 +6,6 @@ import { spinDefinition } from "../../actions/spin";
 
 export const locomotionPlugin: PetPlugin = {
   id: "locomotion",
-  name: "移动系统",
-  version: "1.0.0",
 
   actionDefinitions: [idleDefinition, walkDefinition, jumpDefinition, spinDefinition],
 

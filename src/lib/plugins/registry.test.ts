@@ -1,12 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { PluginRegistry } from "./registry";
-import { PetPlugin, BehaviorContext } from "./types";
+import { PetPlugin } from "./types";
 
 function makePlugin(overrides: Partial<PetPlugin> = {}): PetPlugin {
   return {
     id: "test-plugin",
-    name: "Test",
-    version: "1.0.0",
     ...overrides,
   };
 }
@@ -22,20 +20,6 @@ describe("PluginRegistry", () => {
     const registry = new PluginRegistry();
     registry.register(makePlugin());
     expect(() => registry.register(makePlugin())).toThrow("already registered");
-  });
-
-  it("throws on missing dependency", () => {
-    const registry = new PluginRegistry();
-    expect(() =>
-      registry.register(makePlugin({ dependencies: ["missing"] })),
-    ).toThrow("depends on");
-  });
-
-  it("registers with satisfied dependencies", () => {
-    const registry = new PluginRegistry();
-    registry.register(makePlugin({ id: "base" }));
-    registry.register(makePlugin({ id: "child", dependencies: ["base"] }));
-    expect(registry.getPlugin("child")).toBeDefined();
   });
 
   it("registers animations from actionDefinitions", () => {
@@ -128,34 +112,13 @@ describe("PluginRegistry", () => {
     expect(registry.buildSystemPrompt()).toBe("AB");
   });
 
-  it("buildContext chains plugin augmentations", () => {
-    const registry = new PluginRegistry();
-    const base = { currentEmotion: "IDLE", currentEnergy: 0.5 } as BehaviorContext;
-    registry.register(
-      makePlugin({
-        id: "a",
-        augmentContext: (ctx) => ({ ...ctx, timeSinceLastAction: 999 }),
-      }),
-    );
-    registry.register(
-      makePlugin({
-        id: "b",
-        augmentContext: (ctx) => ({ ...ctx, lastAction: "forced" }),
-      }),
-    );
-    const result = registry.buildContext(base);
-    expect(result.timeSinceLastAction).toBe(999);
-    expect(result.lastAction).toBe("forced");
-  });
-
-  it("executeDecision runs onDecision chain and executes action", async () => {
+  it("executeDecision executes action", async () => {
     const registry = new PluginRegistry();
     const executeSpy = vi.fn();
 
     registry.register(
       makePlugin({
         id: "a",
-        onDecision: (d) => ({ ...d, thought: d.thought + "!" }),
         actionDefinitions: [
           { type: "idle", duration: 1000, interruptible: true, frameCount: 4, draw: () => {}, execute: executeSpy },
         ],
@@ -171,29 +134,5 @@ describe("PluginRegistry", () => {
 
     await registry.executeDecision(decision);
     expect(executeSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("executeDecision stops when onDecision returns null", async () => {
-    const registry = new PluginRegistry();
-    const executeSpy = vi.fn();
-
-    registry.register(
-      makePlugin({
-        id: "blocker",
-        onDecision: () => null,
-        actionDefinitions: [
-          { type: "idle", duration: 1000, interruptible: true, frameCount: 4, draw: () => {}, execute: executeSpy },
-        ],
-      }),
-    );
-
-    await registry.executeDecision({
-      thought: "test",
-      emotion: { primary: "IDLE", energy: 0.5, mood: "平静" },
-      action: { type: "idle", description: "待机" },
-      speech: null,
-    });
-
-    expect(executeSpy).not.toHaveBeenCalled();
   });
 });

@@ -3,8 +3,6 @@ import { allEmotions } from "../../emotions";
 
 export const emotionPlugin: PetPlugin = {
   id: "emotion-core",
-  name: "情绪系统",
-  version: "1.0.0",
 
   emotions: allEmotions,
 

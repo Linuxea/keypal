@@ -4,8 +4,6 @@ import { sleepDefinition } from "../../actions/sleep";
 
 export const restPlugin: PetPlugin = {
   id: "rest",
-  name: "休息系统",
-  version: "1.0.0",
 
   actionDefinitions: [yawnDefinition, sleepDefinition],
 

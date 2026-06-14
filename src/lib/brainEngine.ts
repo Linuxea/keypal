@@ -94,7 +94,7 @@ export class BrainEngine {
       decisionHistory: this.decisionHistory.slice(-10),
     };
 
-    const context = this.config.registry.buildContext(baseContext);
+    const context = baseContext;
     const pluginPrompt = this.config.registry.buildSystemPrompt();
     const systemPrompt = this.buildBasePrompt() + pluginPrompt;
 

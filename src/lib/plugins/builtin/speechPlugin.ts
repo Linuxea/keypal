@@ -2,8 +2,6 @@ import { PetPlugin } from "../types";
 
 export const speechPlugin: PetPlugin = {
   id: "speech-core",
-  name: "台词系统",
-  version: "1.0.0",
 
   augmentSystemPrompt(base: string): string {
     return (

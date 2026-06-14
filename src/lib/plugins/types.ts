@@ -101,41 +101,11 @@ export interface BehaviorContext {
   decisionHistory: string[];
 }
 
-// ---- Plugin Context (passed to plugins on load) ----
-
-export interface PluginContext {
-  registry: PluginRegistryLike;
-}
-
 // ---- Plugin Interface ----
 
 export interface PetPlugin {
   id: string;
-  name: string;
-  version: string;
-  dependencies?: string[];
-
-  onLoad?: (ctx: PluginContext) => Promise<void>;
-  onUnload?: () => Promise<void>;
-
   augmentSystemPrompt?: (base: string) => string;
-  augmentContext?: (ctx: BehaviorContext) => BehaviorContext;
-  onDecision?: (decision: AIDecision) => AIDecision | null;
-
   actionDefinitions?: ActionDefinition[];
   emotions?: EmotionRegistration[];
-}
-
-// ---- Registry Interface (for PluginContext) ----
-
-export interface PluginRegistryLike {
-  getAnimation(name: string): AnimationRegistration | undefined;
-  getAction(type: string): ActionRegistration | undefined;
-  getEmotion(name: string): EmotionRegistration | undefined;
-  getAllAnimations(): AnimationRegistration[];
-  getAllActions(): ActionRegistration[];
-  getAllEmotions(): EmotionRegistration[];
-  buildSystemPrompt(): string;
-  buildContext(base: BehaviorContext): BehaviorContext;
-  executeDecision(decision: AIDecision): Promise<void>;
 }
