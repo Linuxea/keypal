@@ -16,7 +16,8 @@ export const restPlugin: PetPlugin = {
 - sleep: 睡觉（5秒，不可打断）
 - snore: 打呼噜（6秒，不可打断，深度睡眠）
 
-累了或晚上可以选这些行为。很困时可以选 snore。`
+每 2-3 tick 至少选一次休息行为。energy < 0.3 时优先选 snore 或 sleep；energy < 0.5 时选 yawn。
+snore 是最自然的深度休息——玩累了打呼噜才像真正的宠物。`
     );
   },
 };

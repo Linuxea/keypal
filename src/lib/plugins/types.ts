@@ -78,6 +78,8 @@ export interface BehaviorContext {
   pet: PetKind;
   petName: string;
   decisionHistory: string[];
+  energy: number;
+  tickCount: number;
 }
 
 // ---- Plugin Interface ----

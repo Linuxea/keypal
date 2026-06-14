@@ -18,7 +18,7 @@ export const locomotionPlugin: PetPlugin = {
 - jump: 蹦跳（1.5秒）
 - spin: 转圈（2秒）
 
-walk 时必须在屏幕范围内选坐标。大约 70% 的时间应该做非 idle 的行为。`
+walk 时必须在屏幕范围内选坐标。大约一半时间保持活跃，另一半可以休息。`
     );
   },
 };

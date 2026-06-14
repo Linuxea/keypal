@@ -20,6 +20,8 @@ const mockContext: BehaviorContext = {
   pet: "cat",
   petName: "小咪",
   decisionHistory: [],
+  energy: 0.5,
+  tickCount: 1,
 };
 
 function mockFetchResponse(body: unknown, status = 200) {
