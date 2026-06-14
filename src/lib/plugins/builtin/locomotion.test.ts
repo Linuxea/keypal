@@ -1,62 +1,50 @@
 import { describe, it, expect } from "vitest";
-import { PluginRegistry } from "../registry";
-import { emotionPlugin } from "./emotionPlugin";
-import { locomotionPlugin } from "./locomotion";
+import { createRegistry } from "../index";
 
 describe("locomotionPlugin", () => {
-  it("registers 4 actionDefinitions", () => {
-    const registry = new PluginRegistry();
-    registry.register(emotionPlugin);
-    registry.register(locomotionPlugin);
-    expect(locomotionPlugin.actionDefinitions).toHaveLength(4);
+  it("registers 4 behaviors", () => {
+    const registry = createRegistry();
+    const ids = registry.getAllBehaviors().map((b) => b.id);
+    expect(ids).toContain("idle");
+    expect(ids).toContain("walk");
+    expect(ids).toContain("jump");
+    expect(ids).toContain("spin");
   });
 
   it("registers 4 animations", () => {
-    const registry = new PluginRegistry();
-    registry.register(emotionPlugin);
-    registry.register(locomotionPlugin);
-    const animNames = registry.getAllAnimations().map((a) => a.name);
-    expect(animNames).toContain("idle");
-    expect(animNames).toContain("walk");
-    expect(animNames).toContain("jump");
-    expect(animNames).toContain("spin");
+    const registry = createRegistry();
+    const names = registry.getAllAnimations().map((a) => a.name);
+    expect(names).toContain("idle");
+    expect(names).toContain("walk");
+    expect(names).toContain("jump");
+    expect(names).toContain("spin");
   });
 
-  it("registers 4 actions", () => {
-    const registry = new PluginRegistry();
-    registry.register(emotionPlugin);
-    registry.register(locomotionPlugin);
-    expect(registry.getAction("idle")).toBeDefined();
-    expect(registry.getAction("walk")).toBeDefined();
-    expect(registry.getAction("jump")).toBeDefined();
-    expect(registry.getAction("spin")).toBeDefined();
+  it("walk factory requires params", () => {
+    const registry = createRegistry();
+    const walk = registry.getBehavior("walk");
+    expect(walk?.requiresParams).toBeDefined();
   });
 
-  it("walk has movement flag", () => {
-    const registry = new PluginRegistry();
-    registry.register(emotionPlugin);
-    registry.register(locomotionPlugin);
-    expect(registry.getAction("walk")!.movement).toBe(true);
+  it("creates walk behavior with target coordinates", () => {
+    const registry = createRegistry();
+    const behavior = registry.createBehavior("walk", { targetX: 100, targetY: 200 });
+    expect(behavior).toBeDefined();
+    expect(behavior!.id).toBe("walk");
   });
 
-  it("walk is continuous (duration 0)", () => {
-    const registry = new PluginRegistry();
-    registry.register(emotionPlugin);
-    registry.register(locomotionPlugin);
-    expect(registry.getAction("walk")!.duration).toBe(0);
-  });
-
-  it("registers without dependencies", () => {
-    const registry = new PluginRegistry();
-    expect(() => registry.register(locomotionPlugin)).not.toThrow();
+  it("creates jump behavior", () => {
+    const registry = createRegistry();
+    const behavior = registry.createBehavior("jump");
+    expect(behavior).toBeDefined();
+    expect(behavior!.id).toBe("jump");
+    expect(behavior!.interruptible).toBe(true);
   });
 
   it("augments system prompt with locomotion info", () => {
-    const registry = new PluginRegistry();
-    registry.register(emotionPlugin);
-    registry.register(locomotionPlugin);
+    const registry = createRegistry();
     const prompt = registry.buildSystemPrompt();
-    expect(prompt).toContain("移动系统");
+    expect(prompt).toContain("移动行为");
     expect(prompt).toContain("walk");
     expect(prompt).toContain("jump");
   });

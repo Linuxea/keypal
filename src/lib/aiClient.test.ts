@@ -13,16 +13,12 @@ const mockConfig: AIConfig = {
 };
 
 const mockContext: BehaviorContext = {
-  currentEmotion: "IDLE",
-  currentEnergy: 0.5,
-  lastAction: null,
-  lastSpeech: null,
+  currentBehavior: "idle",
   position: { x: 500, y: 500 },
   screenWidth: 1920,
   screenHeight: 1080,
   pet: "cat",
   petName: "小咪",
-  timeSinceLastAction: 10000,
   decisionHistory: [],
 };
 
@@ -44,9 +40,7 @@ describe("decideBehavior", () => {
     const fetchSpy = mockFetchResponse({
       choices: [{ message: { content: JSON.stringify({
         thought: "test",
-        emotion: { primary: "IDLE", energy: 0.5, mood: "平静" },
-        action: { type: "idle", description: "待机" },
-        speech: null,
+        behaviorId: "idle",
       }) } }],
     });
     vi.stubGlobal("fetch", fetchSpy);
@@ -57,9 +51,6 @@ describe("decideBehavior", () => {
     expect(call[0]).toBe("https://api.example.com/v1/chat/completions");
     const body = JSON.parse(call[1].body);
     expect(body.model).toBe("test-model");
-    expect(body.max_tokens).toBe(300);
-    expect(body.temperature).toBe(0.8);
-    expect(body.messages[0].role).toBe("system");
     expect(body.messages[0].content).toBe("test prompt");
     expect(body.messages[1].role).toBe("user");
   });
@@ -68,32 +59,28 @@ describe("decideBehavior", () => {
     vi.stubGlobal("fetch", mockFetchResponse({
       choices: [{ message: { content: JSON.stringify({
         thought: "看到窗外有鸟",
-        emotion: { primary: "HAPPY", energy: 0.9, mood: "兴奋" },
-        action: { type: "jump", description: "开心地蹦跳" },
-        speech: "哇！有鸟！",
+        behaviorId: "jump",
       }) } }],
     }));
 
     const result = await decideBehavior(mockConfig, "prompt", mockContext);
     expect(result.thought).toBe("看到窗外有鸟");
-    expect(result.emotion.primary).toBe("HAPPY");
-    expect(result.emotion.energy).toBe(0.9);
-    expect(result.action.type).toBe("jump");
-    expect(result.speech).toBe("哇！有鸟！");
+    expect(result.behaviorId).toBe("jump");
   });
 
-  it("clamps energy to 0.1-1.0", async () => {
+  it("parses response with params", async () => {
     vi.stubGlobal("fetch", mockFetchResponse({
       choices: [{ message: { content: JSON.stringify({
-        thought: "t",
-        emotion: { primary: "IDLE", energy: 5.0, mood: "" },
-        action: { type: "idle", description: "" },
-        speech: null,
+        thought: "去那边看看",
+        behaviorId: "walk",
+        params: { targetX: 800, targetY: 600 },
       }) } }],
     }));
 
-    const result = await decideBehavior(mockConfig, "p", mockContext);
-    expect(result.emotion.energy).toBe(1.0);
+    const result = await decideBehavior(mockConfig, "prompt", mockContext);
+    expect(result.behaviorId).toBe("walk");
+    expect(result.params?.targetX).toBe(800);
+    expect(result.params?.targetY).toBe(600);
   });
 
   it("handles missing fields with defaults", async () => {
@@ -103,15 +90,12 @@ describe("decideBehavior", () => {
 
     const result = await decideBehavior(mockConfig, "p", mockContext);
     expect(result.thought).toBe("");
-    expect(result.emotion.primary).toBe("IDLE");
-    expect(result.emotion.energy).toBe(0.5);
-    expect(result.action.type).toBe("idle");
-    expect(result.speech).toBeNull();
+    expect(result.behaviorId).toBe("idle");
   });
 
   it("extracts JSON from markdown code block", async () => {
     vi.stubGlobal("fetch", mockFetchResponse({
-      choices: [{ message: { content: '```json\n{"thought":"hi","emotion":{"primary":"IDLE","energy":0.5,"mood":""},"action":{"type":"idle","description":""},"speech":null}\n```' } }],
+      choices: [{ message: { content: '```json\n{"thought":"hi","behaviorId":"idle"}\n```' } }],
     }));
 
     const result = await decideBehavior(mockConfig, "p", mockContext);

@@ -1,6 +1,7 @@
 import { PetKind } from "../types";
+import { Behavior } from "../behaviors/types";
 
-// ---- Animation (internal — used by registry & engine) ----
+// ---- Animation (internal — used by engine) ----
 
 export interface AnimationRegistration {
   name: string;
@@ -15,41 +16,29 @@ export interface AnimationRegistration {
   ) => void;
 }
 
-// ---- Action (internal — used by registry & engine) ----
-
-export interface ActionContext {
-  targetX?: number;
-  targetY?: number;
-  description: string;
-  params?: Record<string, unknown>;
-}
-
-export interface ActionRegistration {
-  type: string;
-  animation: string;
-  duration: number;
-  interruptible: boolean;
-  movement?: boolean;
-  execute?: (ctx: ActionContext) => Promise<void>;
-}
-
-// ---- Action Definition (public — merged action + animation for plugins) ----
+// ---- Action Definition (used by actions/*.ts — animation atoms) ----
 
 export interface ActionDefinition {
   type: string;
   duration: number;
   interruptible: boolean;
   movement?: boolean;
-  execute?: (ctx: ActionContext) => Promise<void>;
   frameCount: number;
   tint?: string;
-  draw: (
-    ctx: CanvasRenderingContext2D,
-    frameIndex: number,
-    pet: PetKind,
-    frameInAnim: number,
-    palette: PetPalette,
-  ) => void;
+  draw: AnimationRegistration["draw"];
+}
+
+// ---- Behavior Factory (used by plugins — behavior atoms) ----
+
+export interface BehaviorFactory {
+  id: string;
+  animation?: {
+    frameCount: number;
+    tint?: string;
+    draw: AnimationRegistration["draw"];
+  };
+  requiresParams?: string;
+  create(params?: Record<string, unknown>): Behavior;
 }
 
 // ---- Emotion ----
@@ -72,32 +61,19 @@ export interface PetPalette {
 
 export interface AIDecision {
   thought: string;
-  emotion: {
-    primary: string;
-    energy: number;
-    mood: string;
-  };
-  action: {
-    type: string;
-    params?: Record<string, unknown>;
-    description: string;
-  };
-  speech: string | null;
+  behaviorId: string;
+  params?: Record<string, unknown>;
 }
 
 // ---- Behavior Context (passed to AI) ----
 
 export interface BehaviorContext {
-  currentEmotion: string;
-  currentEnergy: number;
-  lastAction: string | null;
-  lastSpeech: string | null;
+  currentBehavior: string | null;
   position: { x: number; y: number };
   screenWidth: number;
   screenHeight: number;
   pet: PetKind;
   petName: string;
-  timeSinceLastAction: number;
   decisionHistory: string[];
 }
 
@@ -105,7 +81,8 @@ export interface BehaviorContext {
 
 export interface PetPlugin {
   id: string;
-  augmentSystemPrompt?: (base: string) => string;
-  actionDefinitions?: ActionDefinition[];
+  behaviors?: BehaviorFactory[];
   emotions?: EmotionRegistration[];
+  speechPool?: string[];
+  augmentSystemPrompt?: (base: string) => string;
 }

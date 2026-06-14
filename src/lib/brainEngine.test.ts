@@ -1,17 +1,22 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { BrainEngine, BrainConfig } from "./brainEngine";
 import { PluginRegistry } from "./plugins/registry";
-import { emotionPlugin } from "./plugins/builtin/emotionPlugin";
+import { basePlugin } from "./plugins/builtin/base";
 import { locomotionPlugin } from "./plugins/builtin/locomotion";
 import { restPlugin } from "./plugins/builtin/rest";
-import { speechPlugin } from "./plugins/builtin/speechPlugin";
+import { BehaviorExecutor } from "./behaviorExecutor";
 
 function makeConfig(overrides: Partial<BrainConfig> = {}): BrainConfig {
   const registry = new PluginRegistry();
-  registry.register(emotionPlugin);
+  registry.register(basePlugin);
   registry.register(locomotionPlugin);
   registry.register(restPlugin);
-  registry.register(speechPlugin);
+
+  const executor = new BehaviorExecutor({
+    position: { x: 500, y: 500 },
+    screenWidth: 1920,
+    screenHeight: 1080,
+  });
 
   return {
     ai: {
@@ -23,6 +28,7 @@ function makeConfig(overrides: Partial<BrainConfig> = {}): BrainConfig {
       temperature: 0.8,
     },
     registry,
+    executor,
     intervalMs: 50,
     petName: "小咪",
     pet: "cat",
@@ -58,9 +64,7 @@ describe("BrainEngine", () => {
   it("calls onDecision callback after tick", async () => {
     mockAiResponse({
       thought: "hello",
-      emotion: { primary: "HAPPY", energy: 0.9, mood: "开心" },
-      action: { type: "jump", description: "跳起来" },
-      speech: "耶！",
+      behaviorId: "jump",
     });
 
     const brain = new BrainEngine(makeConfig({ intervalMs: 50 }));
@@ -72,28 +76,25 @@ describe("BrainEngine", () => {
 
     expect(cb).toHaveBeenCalled();
     const decision = cb.mock.calls[0][0];
-    expect(decision.emotion.primary).toBe("HAPPY");
-    expect(decision.action.type).toBe("jump");
-    expect(decision.speech).toBe("耶！");
+    expect(decision.behaviorId).toBe("jump");
+    expect(decision.thought).toBe("hello");
 
     brain.stop();
   });
 
-  it("updates internal state after decision", async () => {
+  it("enqueues behavior into executor after tick", async () => {
     mockAiResponse({
-      thought: "tired",
-      emotion: { primary: "SLEEPY", energy: 0.2, mood: "困" },
-      action: { type: "yawn", description: "打哈欠" },
-      speech: null,
+      thought: "jump!",
+      behaviorId: "jump",
     });
 
-    const brain = new BrainEngine(makeConfig({ intervalMs: 50 }));
+    const config = makeConfig({ intervalMs: 50 });
+    const brain = new BrainEngine(config);
     brain.start();
 
     await sleep(150);
 
-    expect(brain.getCurrentEmotion()).toBe("SLEEPY");
-    expect(brain.getCurrentEnergy()).toBe(0.2);
+    expect(config.executor.getState().animation).toBe("jump");
 
     brain.stop();
   });
@@ -109,7 +110,6 @@ describe("BrainEngine", () => {
     await sleep(150);
 
     expect(cb).not.toHaveBeenCalled();
-    expect(brain.getCurrentEmotion()).toBe("IDLE");
 
     brain.stop();
   });
@@ -117,9 +117,7 @@ describe("BrainEngine", () => {
   it("does not tick after stop", async () => {
     mockAiResponse({
       thought: "t",
-      emotion: { primary: "IDLE", energy: 0.5, mood: "" },
-      action: { type: "idle", description: "" },
-      speech: null,
+      behaviorId: "idle",
     });
 
     const brain = new BrainEngine(makeConfig({ intervalMs: 50 }));
@@ -139,9 +137,7 @@ describe("BrainEngine", () => {
       json: () => Promise.resolve({
         choices: [{ message: { content: JSON.stringify({
           thought: "t",
-          emotion: { primary: "IDLE", energy: 0.5, mood: "" },
-          action: { type: "idle", description: "" },
-          speech: null,
+          behaviorId: "idle",
         }) } }],
       }),
       text: () => Promise.resolve(""),
@@ -167,9 +163,7 @@ describe("BrainEngine", () => {
   it("accumulates decision history", async () => {
     mockAiResponse({
       thought: "thought 1",
-      emotion: { primary: "IDLE", energy: 0.5, mood: "" },
-      action: { type: "idle", description: "" },
-      speech: null,
+      behaviorId: "idle",
     });
 
     const brain = new BrainEngine(makeConfig({ intervalMs: 50 }));
@@ -182,9 +176,7 @@ describe("BrainEngine", () => {
       json: () => Promise.resolve({
         choices: [{ message: { content: JSON.stringify({
           thought: "thought 2",
-          emotion: { primary: "IDLE", energy: 0.5, mood: "" },
-          action: { type: "idle", description: "" },
-          speech: null,
+          behaviorId: "idle",
         }) } }],
       }),
       text: () => Promise.resolve(""),

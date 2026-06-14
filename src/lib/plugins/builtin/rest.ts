@@ -1,21 +1,22 @@
 import { PetPlugin } from "../types";
-import { yawnDefinition } from "../../actions/yawn";
-import { sleepDefinition } from "../../actions/sleep";
+import { yawnFactory } from "../../behaviors/yawn";
+import { sleepFactory } from "../../behaviors/sleep";
 
 export const restPlugin: PetPlugin = {
   id: "rest",
 
-  actionDefinitions: [yawnDefinition, sleepDefinition],
+  behaviors: [yawnFactory, sleepFactory],
+
+  speechPool: ["好困啊...", "让我再睡一会儿...", "哈欠~想睡了"],
 
   augmentSystemPrompt(base: string): string {
     return (
       base +
-      `\n## 休息系统
-可用动作：
-- yawn: 打哈欠（2.5秒），可打断
-- sleep: 睡觉（5秒），不可打断
+      `\n## 休息行为
+- yawn: 打哈欠（2.5秒）
+- sleep: 睡觉（5秒，不可打断）
 
-选择动作时考虑当前情绪：SLEEPY 倾向 yawn/sleep。`
+累了或晚上可以选这些行为。`
     );
   },
 };

@@ -1,26 +1,24 @@
 import { PetPlugin } from "../types";
-import { idleDefinition } from "../../actions/idle";
-import { walkDefinition } from "../../actions/walk";
-import { jumpDefinition } from "../../actions/jump";
-import { spinDefinition } from "../../actions/spin";
+import { idleFactory } from "../../behaviors/idle";
+import { walkFactory } from "../../behaviors/walk";
+import { jumpFactory } from "../../behaviors/jump";
+import { spinFactory } from "../../behaviors/spin";
 
 export const locomotionPlugin: PetPlugin = {
   id: "locomotion",
 
-  actionDefinitions: [idleDefinition, walkDefinition, jumpDefinition, spinDefinition],
+  behaviors: [idleFactory, walkFactory, jumpFactory, spinFactory],
 
   augmentSystemPrompt(base: string): string {
     return (
       base +
-      `\n## 移动系统
-可用动作：
-- idle: 待机（原地发呆，3秒），可打断
-- walk: 走路（移动到目标坐标，需要 params.targetX 和 params.targetY），可打断
-- jump: 蹦跳（原地跳跃，1.5秒），可打断
-- spin: 转圈（原地旋转，2秒），可打断
+      `\n## 移动行为
+- idle: 待机（3秒）
+- walk: 走路，需要 params: { targetX, targetY }
+- jump: 蹦跳（1.5秒）
+- spin: 转圈（2秒）
 
-walk 动作必须提供 params: { targetX: number, targetY: number }，坐标在屏幕范围内（0 到 screenWidth/screenHeight）。
-选择动作时考虑当前情绪：HAPPY 倾向 jump/spin，IDLE 倾向 walk/idle。`
+walk 时必须在屏幕范围内选坐标。大约 70% 的时间应该做非 idle 的行为。`
     );
   },
 };

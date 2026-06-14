@@ -4,33 +4,36 @@ import { createRegistry } from "./index";
 describe("plugin integration", () => {
   it("creates registry with all builtin plugins", () => {
     const registry = createRegistry();
-    expect(registry.getPlugin("emotion-core")).toBeDefined();
+    expect(registry.getPlugin("base")).toBeDefined();
     expect(registry.getPlugin("locomotion")).toBeDefined();
     expect(registry.getPlugin("rest")).toBeDefined();
-    expect(registry.getPlugin("speech-core")).toBeDefined();
   });
 
-  it("has 5 emotions from emotion plugin", () => {
+  it("has 5 emotions from base plugin", () => {
     const registry = createRegistry();
     expect(registry.getAllEmotions()).toHaveLength(5);
   });
 
-  it("has 6 animations across locomotion + rest", () => {
+  it("has 6 behaviors across locomotion + rest", () => {
+    const registry = createRegistry();
+    expect(registry.getAllBehaviors()).toHaveLength(6);
+  });
+
+  it("has 6 animations from behaviors", () => {
     const registry = createRegistry();
     expect(registry.getAllAnimations()).toHaveLength(6);
   });
 
-  it("has 6 actions across locomotion + rest", () => {
+  it("has speechPool entries", () => {
     const registry = createRegistry();
-    expect(registry.getAllActions()).toHaveLength(6);
+    expect(registry.getSpeechPool().length).toBeGreaterThan(0);
   });
 
   it("buildSystemPrompt includes all plugin contributions", () => {
     const registry = createRegistry();
     const prompt = registry.buildSystemPrompt();
-    expect(prompt).toContain("情绪系统");
-    expect(prompt).toContain("移动系统");
-    expect(prompt).toContain("休息系统");
-    expect(prompt).toContain("台词系统");
+    expect(prompt).toContain("基础情绪");
+    expect(prompt).toContain("移动行为");
+    expect(prompt).toContain("休息行为");
   });
 });

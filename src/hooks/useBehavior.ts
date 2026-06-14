@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { BrainEngine } from "../lib/brainEngine";
 import { PluginRegistry } from "../lib/plugins/registry";
-import { AIDecision, AnimationRegistration, ActionRegistration } from "../lib/plugins/types";
+import { AnimationRegistration } from "../lib/plugins/types";
 import { createRegistry } from "../lib/plugins";
 import { createWalkController, WalkController } from "../lib/walkController";
+import { BehaviorExecutor, ExecutorState } from "../lib/behaviorExecutor";
+import { SpeechScheduler } from "../lib/speechScheduler";
+import { createSpeak } from "../lib/behaviors/speak";
 import { AIConfig, PetKind } from "../lib/types";
 
 export interface BehaviorState {
@@ -14,30 +17,12 @@ export interface BehaviorState {
   animations: AnimationRegistration[];
 }
 
-function getLocalActions(registry: PluginRegistry): ActionRegistration[] {
-  return registry.getAllActions().filter((a) => a.interruptible);
-}
-
-function isMovementAction(registry: PluginRegistry, actionType: string): boolean {
-  return registry.getAction(actionType)?.movement === true;
-}
-
-function randomAction(registry: PluginRegistry): { type: string; targetX?: number; targetY?: number } {
-  const actions = getLocalActions(registry);
-  const action = actions[Math.floor(Math.random() * actions.length)];
-  if (action.movement) {
-    const margin = 100;
-    const targetX = margin + Math.floor(Math.random() * (window.screen.width - margin * 2));
-    const targetY = margin + Math.floor(Math.random() * (window.screen.height - margin * 2));
-    return { type: action.type, targetX, targetY };
-  }
-  return { type: action.type };
-}
-
 export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: string = "小咪") {
   const registryRef = useRef<PluginRegistry>(createRegistry());
   const brainRef = useRef<BrainEngine | null>(null);
+  const executorRef = useRef<BehaviorExecutor | null>(null);
   const walkRef = useRef<WalkController | null>(null);
+  const schedulerRef = useRef<SpeechScheduler | null>(null);
   const localTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const aiConfigRef = useRef(aiConfig);
@@ -57,57 +42,6 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
       ...s,
       animations: registry.getAllAnimations(),
     }));
-  }, []);
-
-  const applyDecision = useCallback((decision: AIDecision) => {
-    const actionType = decision.action.type;
-    let flipX = false;
-
-    if (isMovementAction(registryRef.current, actionType)) {
-      walkRef.current?.stop();
-      const targetX = decision.action.params?.targetX as number | undefined;
-      const targetY = decision.action.params?.targetY as number | undefined;
-      if (targetX !== undefined && targetY !== undefined) {
-        flipX = targetX < lastPosRef.current.x;
-        walkRef.current?.start(targetX, targetY);
-      }
-    } else {
-      walkRef.current?.stop();
-    }
-
-    setState((prev) => ({
-      ...prev,
-      currentAnimation: actionType,
-      currentSpeech: decision.speech,
-      energy: decision.emotion.energy,
-      flipX,
-    }));
-  }, []);
-
-  const applyLocalDecision = useCallback((action: ReturnType<typeof randomAction>) => {
-    walkRef.current?.stop();
-
-    if (isMovementAction(registryRef.current, action.type) && action.targetX !== undefined && action.targetY !== undefined) {
-      const flipX = action.targetX < lastPosRef.current.x;
-      walkRef.current?.start(action.targetX, action.targetY);
-      setState((prev) => ({
-        ...prev,
-        currentAnimation: action.type,
-        currentSpeech: null,
-        energy: 0.6,
-        flipX,
-      }));
-    } else {
-      const emotions = registryRef.current.getAllEmotions();
-      const emotion = emotions.find((e) => e.name === "HAPPY");
-      setState((prev) => ({
-        ...prev,
-        currentAnimation: action.type,
-        currentSpeech: null,
-        energy: emotion?.defaultEnergy ?? 0.5,
-        flipX: false,
-      }));
-    }
   }, []);
 
   useEffect(() => {
@@ -140,34 +74,79 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
 
     initWalk();
 
+    const executor = new BehaviorExecutor({
+      position: lastPosRef.current,
+      screenWidth: window.screen.width,
+      screenHeight: window.screen.height,
+      moveTo: (x, y, done) => {
+        walkRef.current?.start(x, y);
+        const check = setInterval(() => {
+          if (!walkRef.current?.isWalking()) {
+            clearInterval(check);
+            done();
+          }
+        }, 100);
+      },
+    });
+
+    executor.onStateChange((es: ExecutorState) => {
+      setState((prev) => ({
+        ...prev,
+        currentAnimation: es.animation,
+        currentSpeech: es.speech,
+        energy: es.energy,
+        flipX: es.flipX,
+      }));
+    });
+
+    executorRef.current = executor;
+
     const brain = new BrainEngine({
       ai: aiConfigRef.current,
       registry,
+      executor,
       intervalMs: aiConfigRef.current.intervalSec * 1000,
       petName,
       pet,
     });
 
-    brain.onDecision((decision: AIDecision) => {
-      applyDecision(decision);
-    });
-
     brainRef.current = brain;
+
+    const scheduler = new SpeechScheduler({
+      intervalMs: aiConfigRef.current.intervalSec * 1000,
+      speechPool: registry.getSpeechPool(),
+      executor,
+      createSpeak,
+    });
+    schedulerRef.current = scheduler;
 
     if (aiConfigRef.current.apiKey) {
       brain.start();
     } else {
-      applyLocalDecision(randomAction(registry));
-      localTimerRef.current = setInterval(() => {
-        applyLocalDecision(randomAction(registry));
-      }, aiConfigRef.current.intervalSec * 1000);
+      const tick = () => {
+        const behaviors = registry.getAllBehaviors().filter((b) => b.id !== "idle");
+        const factory = behaviors[Math.floor(Math.random() * behaviors.length)];
+        const params: Record<string, unknown> = {};
+        if (factory.id === "walk") {
+          params.targetX = 100 + Math.floor(Math.random() * (window.screen.width - 200));
+          params.targetY = 100 + Math.floor(Math.random() * (window.screen.height - 200));
+        }
+        const behavior = registry.createBehavior(factory.id, params);
+        if (behavior) executor.enqueue(behavior);
+      };
+      tick();
+      localTimerRef.current = setInterval(tick, aiConfigRef.current.intervalSec * 1000);
     }
+
+    scheduler.start();
 
     return () => {
       brain.stop();
+      scheduler.stop();
       if (localTimerRef.current) {
         clearInterval(localTimerRef.current);
       }
+      executor.stop();
       walkRef.current?.stop();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -188,12 +167,23 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
     if (aiConfig.apiKey) {
       brain.start();
     } else {
-      applyLocalDecision(randomAction(registryRef.current));
-      localTimerRef.current = setInterval(() => {
-        applyLocalDecision(randomAction(registryRef.current));
-      }, aiConfig.intervalSec * 1000);
+      const executor = executorRef.current!;
+      const registry = registryRef.current;
+      const tick = () => {
+        const behaviors = registry.getAllBehaviors().filter((b) => b.id !== "idle");
+        const factory = behaviors[Math.floor(Math.random() * behaviors.length)];
+        const params: Record<string, unknown> = {};
+        if (factory.id === "walk") {
+          params.targetX = 100 + Math.floor(Math.random() * (window.screen.width - 200));
+          params.targetY = 100 + Math.floor(Math.random() * (window.screen.height - 200));
+        }
+        const behavior = registry.createBehavior(factory.id, params);
+        if (behavior) executor.enqueue(behavior);
+      };
+      tick();
+      localTimerRef.current = setInterval(tick, aiConfig.intervalSec * 1000);
     }
-  }, [aiConfig.apiKey, aiConfig.intervalSec, applyLocalDecision]);
+  }, [aiConfig.apiKey, aiConfig.intervalSec]);
 
   const setPosition = useCallback((x: number, y: number) => {
     lastPosRef.current = { x, y };

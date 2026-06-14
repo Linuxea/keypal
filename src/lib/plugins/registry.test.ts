@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { PluginRegistry } from "./registry";
 import { PetPlugin } from "./types";
 
@@ -22,26 +22,44 @@ describe("PluginRegistry", () => {
     expect(() => registry.register(makePlugin())).toThrow("already registered");
   });
 
-  it("registers animations from actionDefinitions", () => {
+  it("registers behaviors and their animations", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
-        actionDefinitions: [
-          { type: "jump", duration: 1000, interruptible: true, frameCount: 4, draw: () => {} },
+        behaviors: [
+          {
+            id: "jump",
+            animation: { frameCount: 4, draw: () => {} },
+            create: () => ({
+              id: "jump",
+              interruptible: true,
+              getState: () => ({ animation: "jump" }),
+              start: () => Promise.resolve(),
+            }),
+          },
         ],
       }),
     );
+    expect(registry.getBehavior("jump")).toBeDefined();
     expect(registry.getAnimation("jump")).toBeDefined();
     expect(registry.getAnimation("jump")!.frameCount).toBe(4);
   });
 
-  it("throws on duplicate actionDefinition type", () => {
+  it("throws on duplicate behavior id", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
         id: "a",
-        actionDefinitions: [
-          { type: "jump", duration: 1000, interruptible: true, frameCount: 4, draw: () => {} },
+        behaviors: [
+          {
+            id: "jump",
+            animation: { frameCount: 4, draw: () => {} },
+            create: () => ({
+              id: "jump", interruptible: true,
+              getState: () => ({}),
+              start: () => Promise.resolve(),
+            }),
+          },
         ],
       }),
     );
@@ -49,25 +67,41 @@ describe("PluginRegistry", () => {
       registry.register(
         makePlugin({
           id: "b",
-          actionDefinitions: [
-            { type: "jump", duration: 2000, interruptible: false, frameCount: 6, draw: () => {} },
+          behaviors: [
+            {
+              id: "jump",
+              create: () => ({
+                id: "jump", interruptible: true,
+                getState: () => ({}),
+                start: () => Promise.resolve(),
+              }),
+            },
           ],
         }),
       ),
     ).toThrow("already registered");
   });
 
-  it("registers actions from actionDefinitions", () => {
+  it("creates behavior instances from factories", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
-        actionDefinitions: [
-          { type: "walk", duration: 0, interruptible: true, frameCount: 4, draw: () => {} },
+        behaviors: [
+          {
+            id: "wave",
+            create: () => ({
+              id: "wave",
+              interruptible: true,
+              getState: () => ({ animation: "wave" }),
+              start: () => Promise.resolve(),
+            }),
+          },
         ],
       }),
     );
-    expect(registry.getAction("walk")).toBeDefined();
-    expect(registry.getAction("walk")!.interruptible).toBe(true);
+    const behavior = registry.createBehavior("wave");
+    expect(behavior).toBeDefined();
+    expect(behavior!.id).toBe("wave");
   });
 
   it("registers emotions", () => {
@@ -80,19 +114,46 @@ describe("PluginRegistry", () => {
     expect(registry.getEmotion("HAPPY")).toBeDefined();
   });
 
+  it("collects speechPool from plugins", () => {
+    const registry = new PluginRegistry();
+    registry.register(
+      makePlugin({
+        id: "a",
+        speechPool: ["hello", "hi"],
+      }),
+    );
+    registry.register(
+      makePlugin({
+        id: "b",
+        speechPool: ["bye"],
+      }),
+    );
+    expect(registry.getSpeechPool()).toHaveLength(3);
+    expect(registry.getSpeechPool()).toContain("hello");
+    expect(registry.getSpeechPool()).toContain("bye");
+  });
+
   it("unregisters a plugin and its registrations", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
-        actionDefinitions: [
-          { type: "dance", duration: 3000, interruptible: true, frameCount: 6, draw: () => {} },
+        behaviors: [
+          {
+            id: "dance",
+            animation: { frameCount: 6, draw: () => {} },
+            create: () => ({
+              id: "dance", interruptible: true,
+              getState: () => ({}),
+              start: () => Promise.resolve(),
+            }),
+          },
         ],
       }),
     );
     registry.unregister("test-plugin");
     expect(registry.getPlugin("test-plugin")).toBeUndefined();
+    expect(registry.getBehavior("dance")).toBeUndefined();
     expect(registry.getAnimation("dance")).toBeUndefined();
-    expect(registry.getAction("dance")).toBeUndefined();
   });
 
   it("buildSystemPrompt chains plugin augmentations", () => {
@@ -110,29 +171,5 @@ describe("PluginRegistry", () => {
       }),
     );
     expect(registry.buildSystemPrompt()).toBe("AB");
-  });
-
-  it("executeDecision executes action", async () => {
-    const registry = new PluginRegistry();
-    const executeSpy = vi.fn();
-
-    registry.register(
-      makePlugin({
-        id: "a",
-        actionDefinitions: [
-          { type: "idle", duration: 1000, interruptible: true, frameCount: 4, draw: () => {}, execute: executeSpy },
-        ],
-      }),
-    );
-
-    const decision = {
-      thought: "hello",
-      emotion: { primary: "IDLE", energy: 0.5, mood: "平静" },
-      action: { type: "idle", description: "待机" },
-      speech: null,
-    };
-
-    await registry.executeDecision(decision);
-    expect(executeSpy).toHaveBeenCalledTimes(1);
   });
 });

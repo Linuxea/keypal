@@ -16,12 +16,6 @@ function extractJson(text: string): Record<string, unknown> | null {
   }
 }
 
-function parseNumber(v: unknown, fallback: number, min: number, max: number): number {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.max(min, Math.min(max, n));
-}
-
 function parseString(v: unknown, fallback: string): string {
   return typeof v === "string" ? v : fallback;
 }
@@ -93,21 +87,12 @@ export async function decideBehavior(
   const parsed = extractJson(String(content));
   if (!parsed) throw new Error("parse_failed");
 
-  const emotion = parsed.emotion as Record<string, unknown> | undefined;
-  const action = parsed.action as Record<string, unknown> | undefined;
+  const params =
+    (parsed.params as Record<string, unknown>) ?? undefined;
 
   return {
     thought: parseString(parsed.thought, ""),
-    emotion: {
-      primary: parseString(emotion?.primary, "IDLE"),
-      energy: parseNumber(emotion?.energy, 0.5, 0.1, 1.0),
-      mood: parseString(emotion?.mood, ""),
-    },
-    action: {
-      type: parseString(action?.type, "idle"),
-      params: (action?.params as Record<string, unknown>) ?? undefined,
-      description: parseString(action?.description, ""),
-    },
-    speech: typeof parsed.speech === "string" ? parsed.speech : null,
+    behaviorId: parseString(parsed.behaviorId, "idle"),
+    params,
   };
 }
