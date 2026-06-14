@@ -52,9 +52,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   },
 };
 
-export const SPRITE_FRAME_WIDTH = 32;
-export const SPRITE_FRAME_HEIGHT = 32;
-
 export const SPEECH_BUBBLE_HEIGHT = 100;
 export const WINDOW_PADDING = 32;
 export const MIN_WINDOW_WIDTH = 300;

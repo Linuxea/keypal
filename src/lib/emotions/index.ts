@@ -8,25 +8,25 @@ export const idleEmotion: EmotionRegistration = {
 
 export const happyEmotion: EmotionRegistration = {
   name: "HAPPY",
-  tint: "#fff7a8",
+  tint: "#fffbe6",
   defaultEnergy: 0.9,
 };
 
 export const focusedEmotion: EmotionRegistration = {
   name: "FOCUSED",
-  tint: "#a8d8ff",
+  tint: "#e6f4ff",
   defaultEnergy: 0.7,
 };
 
 export const anxiousEmotion: EmotionRegistration = {
   name: "ANXIOUS",
-  tint: "#ffb3b3",
+  tint: "#ffe6e6",
   defaultEnergy: 0.85,
 };
 
 export const sleepyEmotion: EmotionRegistration = {
   name: "SLEEPY",
-  tint: "#c9c9e0",
+  tint: "#e8e8f0",
   defaultEnergy: 0.2,
 };
 

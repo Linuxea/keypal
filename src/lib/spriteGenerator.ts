@@ -2,14 +2,124 @@ import { PetKind } from "./types";
 import { AnimationRegistration, PetPalette } from "./plugins/types";
 
 export const PET_PALETTE: Record<PetKind, PetPalette> = {
-  cat: { body: "#f4a261", accent: "#e76f51", dark: "#6b4423" },
-  dog: { body: "#c89b6d", accent: "#8b5a2b", dark: "#3d2817" },
-  frog: { body: "#6aa84f", accent: "#38761d", dark: "#274e13" },
-  chick: { body: "#ffd966", accent: "#f1c232", dark: "#7f6000" },
+  cat: {
+    body: "#f4a261",
+    accent: "#fbe0c0",
+    dark: "#5c3a1e",
+    outline: "#2d1b0e",
+    highlight: "#ffffff",
+    shadow: "#d4893a",
+  },
+  dog: {
+    body: "#c89b6d",
+    accent: "#e8d5b7",
+    dark: "#3d2817",
+    outline: "#1a0f07",
+    highlight: "#ffffff",
+    shadow: "#a67b4e",
+  },
+  frog: {
+    body: "#6aa84f",
+    accent: "#b6d7a8",
+    dark: "#274e13",
+    outline: "#0f1f07",
+    highlight: "#d9ead3",
+    shadow: "#4a8530",
+  },
+  chick: {
+    body: "#ffd966",
+    accent: "#fff2cc",
+    dark: "#7f6000",
+    outline: "#3d2e00",
+    highlight: "#ffffff",
+    shadow: "#e6b800",
+  },
 };
 
 export const SPRITE_FRAME_WIDTH = 32;
 export const SPRITE_FRAME_HEIGHT = 32;
+
+const PALETTE_INDEX_TO_COLOR: (keyof PetPalette)[] = [
+  "body",      // index 0 reserved for transparent, skipped
+  "body",
+  "accent",
+  "dark",
+  "outline",
+  "highlight",
+  "shadow",
+];
+
+export function renderCommands(
+  ctx: CanvasRenderingContext2D,
+  commands: string[],
+  palette: PetPalette,
+  ox: number,
+  oy: number,
+) {
+  for (const cmd of commands) {
+    const parts = cmd.trim().split(/\s+/);
+    if (parts.length === 0) continue;
+    const type = parts[0];
+    const args = parts.slice(1).map(Number);
+    const colorIdx = args.pop()!;
+    const color = colorIdx === 0 ? "transparent" : palette[PALETTE_INDEX_TO_COLOR[colorIdx]];
+
+    ctx.fillStyle = color;
+    ctx.strokeStyle = palette.outline;
+    ctx.lineWidth = 1;
+
+    switch (type) {
+      case "R": {
+        const [x, y, w, h] = args;
+        ctx.fillRect(ox + x, oy + y, w, h);
+        ctx.strokeRect(ox + x - 0.5, oy + y - 0.5, w + 1, h + 1);
+        break;
+      }
+      case "E": {
+        const [cx, cy, rx, ry] = args;
+        ctx.beginPath();
+        ctx.ellipse(ox + cx, oy + cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        break;
+      }
+      case "C": {
+        const [cx, cy, r] = args;
+        ctx.beginPath();
+        ctx.arc(ox + cx, oy + cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        break;
+      }
+      case "T": {
+        const [x1, y1, x2, y2, x3, y3] = args;
+        ctx.beginPath();
+        ctx.moveTo(ox + x1, oy + y1);
+        ctx.lineTo(ox + x2, oy + y2);
+        ctx.lineTo(ox + x3, oy + y3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        break;
+      }
+      case "L": {
+        const [x1, y1, x2, y2, w] = args;
+        ctx.lineWidth = w;
+        ctx.beginPath();
+        ctx.moveTo(ox + x1, oy + y1);
+        ctx.lineTo(ox + x2, oy + y2);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+        break;
+      }
+      case "P": {
+        const [x, y] = args;
+        ctx.fillRect(ox + x, oy + y, 1, 1);
+        break;
+      }
+    }
+  }
+}
 
 function fillFrame(ctx: CanvasRenderingContext2D, frameIndex: number, fill: string) {
   const x = frameIndex * SPRITE_FRAME_WIDTH;
@@ -121,12 +231,6 @@ export function generateSpriteSheet(
       }
 
       anim.draw(ctx, frameIndex, pet, i, palette);
-
-      ctx.fillStyle = palette.dark;
-      ctx.font = "5px monospace";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      ctx.fillText(anim.name.slice(0, 4).toUpperCase(), frameIndex * SPRITE_FRAME_WIDTH + 1, 1);
 
       frameIndex++;
     }

@@ -55,6 +55,9 @@ export interface PetPalette {
   body: string;
   accent: string;
   dark: string;
+  outline: string;
+  highlight: string;
+  shadow: string;
 }
 
 // ---- AI Decision ----
