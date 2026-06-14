@@ -57,6 +57,7 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
           async (x, y) => {
             await w.setPosition(new win.LogicalPosition(x, y));
             lastPosRef.current = { x, y };
+            brainRef.current?.setPosition(x, y);
           },
           async () => {
             const p = await w.outerPosition();
