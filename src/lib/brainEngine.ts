@@ -3,7 +3,7 @@ import { decideBehavior } from "./aiClient";
 import { PluginRegistry } from "./plugins/registry";
 import { AIDecision, BehaviorContext } from "./plugins/types";
 import { BehaviorExecutor } from "./behaviorExecutor";
-import { appendLogRaw } from "./log";
+import { log, logError } from "./log";
 
 export interface BrainConfig {
   ai: AIConfig;
@@ -25,6 +25,7 @@ export class BrainEngine {
   private screenHeight = 1080;
   private callback: BrainCallback | null = null;
   private running = false;
+  private tickCount = 0;
 
   constructor(config: BrainConfig) {
     this.config = config;
@@ -71,6 +72,8 @@ export class BrainEngine {
 
   private async tick(): Promise<void> {
     if (!this.running) return;
+    this.tickCount++;
+    const tick = this.tickCount;
 
     const baseContext: BehaviorContext = {
       currentBehavior: this.config.executor.getState().animation,
@@ -85,12 +88,14 @@ export class BrainEngine {
     const pluginPrompt = this.config.registry.buildSystemPrompt();
     const systemPrompt = this.buildBasePrompt() + pluginPrompt;
 
+    const t0 = Date.now();
     try {
       const decision = await decideBehavior(
         this.config.ai,
         systemPrompt,
         baseContext,
       );
+      const latency = Date.now() - t0;
 
       this.decisionHistory.push(decision.thought);
       if (this.decisionHistory.length > 50) {
@@ -102,18 +107,36 @@ export class BrainEngine {
         decision.params,
       );
 
+      const posStr = `pos=(${this.position.x},${this.position.y})`;
+      const paramsStr = formatParamsForLog(decision.behaviorId, decision.params);
+      const thoughtStr = `thought="${escapeForLog(decision.thought)}"`;
+
       if (behavior) {
         this.config.executor.enqueue(behavior);
+        await log(
+          "brain",
+          `tick=${tick} decide behavior=${decision.behaviorId}${paramsStr ? ` ${paramsStr}` : ""} ${posStr} latency=${latency}ms ${thoughtStr}`,
+        );
+      } else {
+        await log(
+          "brain",
+          `tick=${tick} decide behavior=${decision.behaviorId} UNKNOWN-not-in-registry ${posStr} latency=${latency}ms ${thoughtStr}`,
+        );
       }
-
-      await appendLogRaw(
-        `[brain] behavior=${decision.behaviorId} | ${decision.thought}`,
-      );
 
       this.callback?.(decision);
     } catch (err) {
-      console.warn("[brain] decision failed:", err);
-      await appendLogRaw(`[brain] error: ${(err as Error).message}`);
+      const latency = Date.now() - t0;
+      const lastThought = this.decisionHistory[this.decisionHistory.length - 1];
+      const posStr = `pos=(${this.position.x},${this.position.y})`;
+      const lastStr = lastThought
+        ? ` lastThought="${escapeForLog(lastThought)}"`
+        : "";
+      await logError(
+        "brain",
+        `error tick=${tick} ${posStr} latency=${latency}ms${lastStr} msg=${(err as Error).message}`,
+        err,
+      );
     }
   }
 
@@ -151,4 +174,31 @@ ${behaviorList}
 
 `;
   }
+}
+
+function formatParamsForLog(
+  behaviorId: string,
+  params?: Record<string, unknown>,
+): string {
+  if (!params) return "";
+  if (behaviorId === "walk") {
+    const tx = params.targetX;
+    const ty = params.targetY;
+    if (typeof tx === "number" && typeof ty === "number") {
+      return `target=(${tx},${ty})`;
+    }
+  }
+  try {
+    return `params=${JSON.stringify(params)}`;
+  } catch {
+    return "";
+  }
+}
+
+function escapeForLog(s: string): string {
+  return s
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r");
 }

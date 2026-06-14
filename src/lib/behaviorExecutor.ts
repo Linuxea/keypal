@@ -1,4 +1,5 @@
 import { Behavior, BehaviorExecContext, BehaviorState } from "./behaviors/types";
+import { log } from "./log";
 
 export interface ExecutorState {
   animation: string;
@@ -42,35 +43,56 @@ export class BehaviorExecutor {
 
   enqueue(behavior: Behavior): void {
     if (this.mainBehavior?.interruptible) {
+      const prevId = this.mainBehavior.id;
       this.stopMain();
-      this.startMain(behavior);
+      void log(
+        "exec",
+        `enqueue ${behavior.id} interruptible=${behavior.interruptible} replaced=${prevId}`,
+      );
+      void this.startMain(behavior);
     } else if (this.mainBehavior) {
       this.mainQueue.push(behavior);
+      void log(
+        "exec",
+        `enqueue ${behavior.id} interruptible=${behavior.interruptible} queued (behind ${this.mainBehavior.id}, queue=${this.mainQueue.length})`,
+      );
     } else {
-      this.startMain(behavior);
+      void log(
+        "exec",
+        `enqueue ${behavior.id} interruptible=${behavior.interruptible}`,
+      );
+      void this.startMain(behavior);
     }
   }
 
   enqueueOverlay(behavior: Behavior): void {
+    const prevId = this.overlayBehavior?.id;
     if (this.overlayBehavior) {
       this.overlayBehavior.stop?.();
     }
     this.overlayBehavior = behavior;
+    void log(
+      "exec",
+      `overlay enqueue ${behavior.id}${prevId ? ` replaced=${prevId}` : ""}`,
+    );
     behavior.start(this.ctx).then(() => {
       if (this.overlayBehavior === behavior) {
         this.overlayBehavior = null;
         this.applyState({ speech: null });
+        void log("exec", `overlay complete ${behavior.id}`);
       }
     });
   }
 
   private async startMain(behavior: Behavior): Promise<void> {
     this.mainBehavior = behavior;
+    void log("exec", `start ${behavior.id} interruptible=${behavior.interruptible}`);
     await behavior.start(this.ctx);
 
     if (this.mainBehavior === behavior) {
       this.mainBehavior = null;
       this.applyState({ animation: "idle" });
+      void log("exec", `complete ${behavior.id} -> idle`);
       this.dequeueNext();
     }
   }
@@ -78,7 +100,11 @@ export class BehaviorExecutor {
   private dequeueNext(): void {
     const next = this.mainQueue.shift();
     if (next) {
-      this.startMain(next);
+      void log(
+        "exec",
+        `dequeue ${next.id} (remaining=${this.mainQueue.length})`,
+      );
+      void this.startMain(next);
     }
   }
 
@@ -102,6 +128,10 @@ export class BehaviorExecutor {
   }
 
   stop(): void {
+    void log(
+      "exec",
+      `stop teardown main=${this.mainBehavior?.id ?? "null"} overlay=${this.overlayBehavior?.id ?? "null"} queue=${this.mainQueue.length}`,
+    );
     this.stopMain();
     if (this.overlayBehavior) {
       this.overlayBehavior.stop?.();

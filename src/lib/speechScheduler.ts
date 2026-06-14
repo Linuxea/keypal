@@ -1,5 +1,6 @@
 import { Behavior } from "./behaviors/types";
 import { BehaviorExecutor } from "./behaviorExecutor";
+import { log } from "./log";
 
 export class SpeechScheduler {
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -38,9 +39,15 @@ export class SpeechScheduler {
   private tick(): void {
     this.tickCount++;
     if (this.tickCount >= this.threshold && this.speechPool.length > 0) {
+      const firedAt = this.tickCount;
+      const firedThreshold = this.threshold;
       this.tickCount = 0;
       this.threshold = this.randomThreshold();
       const text = this.speechPool[Math.floor(Math.random() * this.speechPool.length)];
+      void log(
+        "speech",
+        `overlay "${text}" pool=${this.speechPool.length} after=${firedAt}/${firedThreshold}ticks next=${this.threshold}ticks`,
+      );
       this.executor.enqueueOverlay(this.createSpeak(text));
     }
   }

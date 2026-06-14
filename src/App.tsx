@@ -6,7 +6,7 @@ import { SpeechBubble } from "./components/SpeechBubble";
 import { useBehavior } from "./hooks/useBehavior";
 import { useDrag } from "./hooks/useDrag";
 import { configStore } from "./lib/config";
-import { appendLogRaw } from "./lib/log";
+import { log } from "./lib/log";
 import {
   AIConfig,
   AppConfig,
@@ -30,7 +30,7 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      await appendLogRaw("===== KeyPal starting =====");
+      await log("app", "===== KeyPal starting =====");
       const cfg = await configStore.load();
       setConfig(cfg);
       setLoaded(true);
@@ -54,7 +54,7 @@ export default function App() {
       } catch (err) {
         console.warn("[keypal] window init failed", err);
       }
-      await appendLogRaw(`===== KeyPal ready, pet=${cfg.pet} apiKey=${cfg.ai.apiKey ? "(set)" : "(empty)"} =====`);
+      await log("app", `===== KeyPal ready pet=${cfg.pet} apiKey=${cfg.ai.apiKey ? "(set)" : "(empty)"} =====`);
     })();
   }, []);
 
