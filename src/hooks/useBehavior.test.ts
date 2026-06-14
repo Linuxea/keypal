@@ -51,6 +51,7 @@ describe("useBehavior", () => {
 
   it("starts local fallback when no api key", async () => {
     vi.useFakeTimers();
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.5);
     const noKeyConfig: AIConfig = { ...mockAiConfig, apiKey: "" };
     const { result } = renderHook(() => useBehavior(noKeyConfig, "cat", "小咪"));
 
@@ -60,6 +61,7 @@ describe("useBehavior", () => {
 
     expect(result.current.currentAnimation).not.toBe("idle");
 
+    randomSpy.mockRestore();
     vi.useRealTimers();
   });
 });

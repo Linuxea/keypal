@@ -1,6 +1,6 @@
 import { PetKind } from "../types";
 
-// ---- Animation ----
+// ---- Animation (internal — used by registry & engine) ----
 
 export interface AnimationRegistration {
   name: string;
@@ -15,7 +15,7 @@ export interface AnimationRegistration {
   ) => void;
 }
 
-// ---- Action ----
+// ---- Action (internal — used by registry & engine) ----
 
 export interface ActionContext {
   targetX?: number;
@@ -31,6 +31,25 @@ export interface ActionRegistration {
   interruptible: boolean;
   movement?: boolean;
   execute?: (ctx: ActionContext) => Promise<void>;
+}
+
+// ---- Action Definition (public — merged action + animation for plugins) ----
+
+export interface ActionDefinition {
+  type: string;
+  duration: number;
+  interruptible: boolean;
+  movement?: boolean;
+  execute?: (ctx: ActionContext) => Promise<void>;
+  frameCount: number;
+  tint?: string;
+  draw: (
+    ctx: CanvasRenderingContext2D,
+    frameIndex: number,
+    pet: PetKind,
+    frameInAnim: number,
+    palette: PetPalette,
+  ) => void;
 }
 
 // ---- Emotion ----
@@ -103,8 +122,7 @@ export interface PetPlugin {
   augmentContext?: (ctx: BehaviorContext) => BehaviorContext;
   onDecision?: (decision: AIDecision) => AIDecision | null;
 
-  animations?: AnimationRegistration[];
-  actions?: ActionRegistration[];
+  actionDefinitions?: ActionDefinition[];
   emotions?: EmotionRegistration[];
 }
 

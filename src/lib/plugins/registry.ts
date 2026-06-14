@@ -41,25 +41,32 @@ export class PluginRegistry {
       }
     }
 
-    if (plugin.animations) {
-      for (const anim of plugin.animations) {
-        if (this.animations.has(anim.name)) {
+    if (plugin.actionDefinitions) {
+      for (const def of plugin.actionDefinitions) {
+        if (this.animations.has(def.type)) {
           throw new Error(
-            `Animation "${anim.name}" already registered by another plugin`,
+            `Animation "${def.type}" already registered by another plugin`,
           );
         }
-        this.animations.set(anim.name, anim);
-      }
-    }
-
-    if (plugin.actions) {
-      for (const action of plugin.actions) {
-        if (this.actions.has(action.type)) {
+        if (this.actions.has(def.type)) {
           throw new Error(
-            `Action "${action.type}" already registered by another plugin`,
+            `Action "${def.type}" already registered by another plugin`,
           );
         }
-        this.actions.set(action.type, action);
+        this.animations.set(def.type, {
+          name: def.type,
+          frameCount: def.frameCount,
+          tint: def.tint,
+          draw: def.draw,
+        });
+        this.actions.set(def.type, {
+          type: def.type,
+          animation: def.type,
+          duration: def.duration,
+          interruptible: def.interruptible,
+          movement: def.movement,
+          execute: def.execute,
+        });
       }
     }
 
@@ -89,14 +96,10 @@ export class PluginRegistry {
       void plugin.onUnload();
     }
 
-    if (plugin.animations) {
-      for (const anim of plugin.animations) {
-        this.animations.delete(anim.name);
-      }
-    }
-    if (plugin.actions) {
-      for (const action of plugin.actions) {
-        this.actions.delete(action.type);
+    if (plugin.actionDefinitions) {
+      for (const def of plugin.actionDefinitions) {
+        this.animations.delete(def.type);
+        this.actions.delete(def.type);
       }
     }
     if (plugin.emotions) {

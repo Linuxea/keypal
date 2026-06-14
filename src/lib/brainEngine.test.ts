@@ -2,13 +2,15 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { BrainEngine, BrainConfig } from "./brainEngine";
 import { PluginRegistry } from "./plugins/registry";
 import { emotionPlugin } from "./plugins/builtin/emotionPlugin";
-import { actionPlugin } from "./plugins/builtin/actionPlugin";
+import { locomotionPlugin } from "./plugins/builtin/locomotion";
+import { restPlugin } from "./plugins/builtin/rest";
 import { speechPlugin } from "./plugins/builtin/speechPlugin";
 
 function makeConfig(overrides: Partial<BrainConfig> = {}): BrainConfig {
   const registry = new PluginRegistry();
   registry.register(emotionPlugin);
-  registry.register(actionPlugin);
+  registry.register(locomotionPlugin);
+  registry.register(restPlugin);
   registry.register(speechPlugin);
 
   return {

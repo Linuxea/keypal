@@ -1,17 +1,12 @@
 import { PetPlugin } from "../types";
+import { allEmotions } from "../../emotions";
 
 export const emotionPlugin: PetPlugin = {
   id: "emotion-core",
   name: "情绪系统",
   version: "1.0.0",
 
-  emotions: [
-    { name: "IDLE", tint: "transparent", defaultEnergy: 0.5 },
-    { name: "HAPPY", tint: "#fff7a8", defaultEnergy: 0.9 },
-    { name: "FOCUSED", tint: "#a8d8ff", defaultEnergy: 0.7 },
-    { name: "ANXIOUS", tint: "#ffb3b3", defaultEnergy: 0.85 },
-    { name: "SLEEPY", tint: "#c9c9e0", defaultEnergy: 0.2 },
-  ],
+  emotions: allEmotions,
 
   augmentSystemPrompt(base: string): string {
     return (

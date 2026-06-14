@@ -38,12 +38,12 @@ describe("PluginRegistry", () => {
     expect(registry.getPlugin("child")).toBeDefined();
   });
 
-  it("registers animations", () => {
+  it("registers animations from actionDefinitions", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
-        animations: [
-          { name: "jump", frameCount: 4, draw: () => {} },
+        actionDefinitions: [
+          { type: "jump", duration: 1000, interruptible: true, frameCount: 4, draw: () => {} },
         ],
       }),
     );
@@ -51,53 +51,39 @@ describe("PluginRegistry", () => {
     expect(registry.getAnimation("jump")!.frameCount).toBe(4);
   });
 
-  it("throws on duplicate animation name", () => {
+  it("throws on duplicate actionDefinition type", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
         id: "a",
-        animations: [{ name: "jump", frameCount: 4, draw: () => {} }],
+        actionDefinitions: [
+          { type: "jump", duration: 1000, interruptible: true, frameCount: 4, draw: () => {} },
+        ],
       }),
     );
     expect(() =>
       registry.register(
         makePlugin({
           id: "b",
-          animations: [{ name: "jump", frameCount: 6, draw: () => {} }],
+          actionDefinitions: [
+            { type: "jump", duration: 2000, interruptible: false, frameCount: 6, draw: () => {} },
+          ],
         }),
       ),
     ).toThrow("already registered");
   });
 
-  it("registers actions", () => {
+  it("registers actions from actionDefinitions", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
-        actions: [
-          { type: "walk", animation: "walk", duration: 2000, interruptible: true },
+        actionDefinitions: [
+          { type: "walk", duration: 0, interruptible: true, frameCount: 4, draw: () => {} },
         ],
       }),
     );
     expect(registry.getAction("walk")).toBeDefined();
     expect(registry.getAction("walk")!.interruptible).toBe(true);
-  });
-
-  it("throws on duplicate action type", () => {
-    const registry = new PluginRegistry();
-    registry.register(
-      makePlugin({
-        id: "a",
-        actions: [{ type: "walk", animation: "walk", duration: 1000, interruptible: true }],
-      }),
-    );
-    expect(() =>
-      registry.register(
-        makePlugin({
-          id: "b",
-          actions: [{ type: "walk", animation: "walk", duration: 2000, interruptible: true }],
-        }),
-      ),
-    ).toThrow("already registered");
   });
 
   it("registers emotions", () => {
@@ -114,8 +100,9 @@ describe("PluginRegistry", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
-        animations: [{ name: "dance", frameCount: 6, draw: () => {} }],
-        actions: [{ type: "dance", animation: "dance", duration: 3000, interruptible: true }],
+        actionDefinitions: [
+          { type: "dance", duration: 3000, interruptible: true, frameCount: 6, draw: () => {} },
+        ],
       }),
     );
     registry.unregister("test-plugin");
@@ -169,8 +156,8 @@ describe("PluginRegistry", () => {
       makePlugin({
         id: "a",
         onDecision: (d) => ({ ...d, thought: d.thought + "!" }),
-        actions: [
-          { type: "idle", animation: "idle", duration: 1000, interruptible: true, execute: executeSpy },
+        actionDefinitions: [
+          { type: "idle", duration: 1000, interruptible: true, frameCount: 4, draw: () => {}, execute: executeSpy },
         ],
       }),
     );
@@ -194,8 +181,8 @@ describe("PluginRegistry", () => {
       makePlugin({
         id: "blocker",
         onDecision: () => null,
-        actions: [
-          { type: "idle", animation: "idle", duration: 1000, interruptible: true, execute: executeSpy },
+        actionDefinitions: [
+          { type: "idle", duration: 1000, interruptible: true, frameCount: 4, draw: () => {}, execute: executeSpy },
         ],
       }),
     );
