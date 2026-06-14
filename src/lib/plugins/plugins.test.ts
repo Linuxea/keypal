@@ -14,14 +14,14 @@ describe("plugin integration", () => {
     expect(registry.getAllEmotions()).toHaveLength(5);
   });
 
-  it("has 6 behaviors across locomotion + rest", () => {
+  it("has 7 behaviors across locomotion + rest", () => {
     const registry = createRegistry();
-    expect(registry.getAllBehaviors()).toHaveLength(6);
+    expect(registry.getAllBehaviors()).toHaveLength(7);
   });
 
-  it("has 6 animations from behaviors", () => {
+  it("has 7 animations from behaviors", () => {
     const registry = createRegistry();
-    expect(registry.getAllAnimations()).toHaveLength(6);
+    expect(registry.getAllAnimations()).toHaveLength(7);
   });
 
   it("has speechPool entries", () => {

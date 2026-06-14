@@ -6,4 +6,5 @@ export { jumpFactory } from "./jump";
 export { spinFactory } from "./spin";
 export { yawnFactory } from "./yawn";
 export { sleepFactory } from "./sleep";
+export { snoreFactory } from "./snore";
 export { speakFactory, createSpeak } from "./speak";

@@ -2,23 +2,32 @@ import { describe, it, expect } from "vitest";
 import { createRegistry } from "../index";
 
 describe("restPlugin", () => {
-  it("registers yawn and sleep behaviors", () => {
+  it("registers yawn, sleep, and snore behaviors", () => {
     const registry = createRegistry();
     const ids = registry.getAllBehaviors().map((b) => b.id);
     expect(ids).toContain("yawn");
     expect(ids).toContain("sleep");
+    expect(ids).toContain("snore");
   });
 
-  it("registers yawn and sleep animations", () => {
+  it("registers yawn, sleep, and snore animations", () => {
     const registry = createRegistry();
     const names = registry.getAllAnimations().map((a) => a.name);
     expect(names).toContain("yawn");
     expect(names).toContain("sleep");
+    expect(names).toContain("snore");
   });
 
   it("sleep behavior is not interruptible", () => {
     const registry = createRegistry();
     const behavior = registry.createBehavior("sleep");
+    expect(behavior).toBeDefined();
+    expect(behavior!.interruptible).toBe(false);
+  });
+
+  it("snore behavior is not interruptible", () => {
+    const registry = createRegistry();
+    const behavior = registry.createBehavior("snore");
     expect(behavior).toBeDefined();
     expect(behavior!.interruptible).toBe(false);
   });
@@ -30,10 +39,11 @@ describe("restPlugin", () => {
     expect(behavior!.interruptible).toBe(true);
   });
 
-  it("contributes rest speechPool", () => {
+  it("contributes rest speechPool including snore lines", () => {
     const registry = createRegistry();
     const pool = registry.getSpeechPool();
     expect(pool.some((s) => s.includes("困"))).toBe(true);
+    expect(pool.some((s) => s.includes("呼噜"))).toBe(true);
   });
 
   it("augments system prompt with rest info", () => {
@@ -42,5 +52,6 @@ describe("restPlugin", () => {
     expect(prompt).toContain("休息行为");
     expect(prompt).toContain("yawn");
     expect(prompt).toContain("sleep");
+    expect(prompt).toContain("snore");
   });
 });
