@@ -8,15 +8,6 @@ export const restPlugin: PetPlugin = {
 
   behaviors: [yawnFactory, sleepFactory, snoreFactory],
 
-  speechPool: [
-    "好困啊...",
-    "让我再睡一会儿...",
-    "哈欠~想睡了",
-    "呼噜噜...",
-    "zzz...",
-    "呼~哧~",
-  ],
-
   augmentSystemPrompt(base: string): string {
     return (
       base +

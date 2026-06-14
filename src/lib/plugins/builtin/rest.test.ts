@@ -39,13 +39,6 @@ describe("restPlugin", () => {
     expect(behavior!.interruptible).toBe(true);
   });
 
-  it("contributes rest speechPool including snore lines", () => {
-    const registry = createRegistry();
-    const pool = registry.getSpeechPool();
-    expect(pool.some((s) => s.includes("困"))).toBe(true);
-    expect(pool.some((s) => s.includes("呼噜"))).toBe(true);
-  });
-
   it("augments system prompt with rest info", () => {
     const registry = createRegistry();
     const prompt = registry.buildSystemPrompt();

@@ -6,17 +6,6 @@ export const basePlugin: PetPlugin = {
 
   emotions: allEmotions,
 
-  speechPool: [
-    "嗯...在想什么呢",
-    "今天天气不错呀",
-    "陪我说说话嘛",
-    "哼，不理你了",
-    "嘿嘿嘿~",
-    "好无聊啊...",
-    "你在干什么呀",
-    "想出去玩...",
-  ],
-
   augmentSystemPrompt(base: string): string {
     return (
       base +

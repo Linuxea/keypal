@@ -5,7 +5,6 @@ import { AnimationRegistration } from "../lib/plugins/types";
 import { createRegistry } from "../lib/plugins";
 import { createWalkController, WalkController } from "../lib/walkController";
 import { BehaviorExecutor, ExecutorState } from "../lib/behaviorExecutor";
-import { SpeechScheduler } from "../lib/speechScheduler";
 import { createSpeak } from "../lib/behaviors/speak";
 import { AIConfig, PetKind } from "../lib/types";
 
@@ -22,7 +21,6 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
   const brainRef = useRef<BrainEngine | null>(null);
   const executorRef = useRef<BehaviorExecutor | null>(null);
   const walkRef = useRef<WalkController | null>(null);
-  const schedulerRef = useRef<SpeechScheduler | null>(null);
   const localTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const aiConfigRef = useRef(aiConfig);
@@ -112,13 +110,12 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
 
     brainRef.current = brain;
 
-    const scheduler = new SpeechScheduler({
-      intervalMs: aiConfigRef.current.intervalSec * 1000,
-      speechPool: registry.getSpeechPool(),
-      executor,
-      createSpeak,
+    brain.onDecision((d) => {
+      if (d.thought) {
+        const dur = aiConfigRef.current.intervalSec * 1000;
+        executor.enqueueOverlay(createSpeak(d.thought, dur));
+      }
     });
-    schedulerRef.current = scheduler;
 
     if (aiConfigRef.current.apiKey) {
       brain.start();
@@ -138,11 +135,8 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
       localTimerRef.current = setInterval(tick, aiConfigRef.current.intervalSec * 1000);
     }
 
-    scheduler.start();
-
     return () => {
       brain.stop();
-      scheduler.stop();
       if (localTimerRef.current) {
         clearInterval(localTimerRef.current);
       }

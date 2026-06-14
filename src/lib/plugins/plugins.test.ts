@@ -24,11 +24,6 @@ describe("plugin integration", () => {
     expect(registry.getAllAnimations()).toHaveLength(7);
   });
 
-  it("has speechPool entries", () => {
-    const registry = createRegistry();
-    expect(registry.getSpeechPool().length).toBeGreaterThan(0);
-  });
-
   it("buildSystemPrompt includes all plugin contributions", () => {
     const registry = createRegistry();
     const prompt = registry.buildSystemPrompt();
