@@ -12,8 +12,10 @@ export const jumpFactory: BehaviorFactory = {
     return {
       id: "jump",
       interruptible: true,
-      getState: () => ({ animation: "jump", emotion: "HAPPY", energy: 0.9 }),
-      start: () => new Promise<void>((r) => setTimeout(r, 1500)),
+      start: (ctx) => {
+        ctx.emitState?.({ animation: "jump", energy: 0.9 });
+        return new Promise<void>((r) => setTimeout(r, 1500));
+      },
     };
   },
 };

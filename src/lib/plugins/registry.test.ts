@@ -33,7 +33,6 @@ describe("PluginRegistry", () => {
             create: () => ({
               id: "jump",
               interruptible: true,
-              getState: () => ({ animation: "jump" }),
               start: () => Promise.resolve(),
             }),
           },
@@ -56,7 +55,6 @@ describe("PluginRegistry", () => {
             animation: { frameCount: 4, draw: () => {} },
             create: () => ({
               id: "jump", interruptible: true,
-              getState: () => ({}),
               start: () => Promise.resolve(),
             }),
           },
@@ -72,7 +70,6 @@ describe("PluginRegistry", () => {
               id: "jump",
               create: () => ({
                 id: "jump", interruptible: true,
-                getState: () => ({}),
                 start: () => Promise.resolve(),
               }),
             },
@@ -92,7 +89,6 @@ describe("PluginRegistry", () => {
             create: () => ({
               id: "wave",
               interruptible: true,
-              getState: () => ({ animation: "wave" }),
               start: () => Promise.resolve(),
             }),
           },
@@ -143,7 +139,6 @@ describe("PluginRegistry", () => {
             animation: { frameCount: 6, draw: () => {} },
             create: () => ({
               id: "dance", interruptible: true,
-              getState: () => ({}),
               start: () => Promise.resolve(),
             }),
           },

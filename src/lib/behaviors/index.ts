@@ -1,4 +1,5 @@
 export { compose } from "./composite";
+export { sequence } from "./sequence";
 export { idleFactory } from "./idle";
 export { walkFactory } from "./walk";
 export { jumpFactory } from "./jump";

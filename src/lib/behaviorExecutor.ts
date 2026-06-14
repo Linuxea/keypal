@@ -2,7 +2,6 @@ import { Behavior, BehaviorExecContext, BehaviorState } from "./behaviors/types"
 
 export interface ExecutorState {
   animation: string;
-  emotion: string;
   energy: number;
   speech: string | null;
   flipX: boolean;
@@ -19,14 +18,18 @@ export class BehaviorExecutor {
 
   private state: ExecutorState = {
     animation: "idle",
-    emotion: "IDLE",
     energy: 0.5,
     speech: null,
     flipX: false,
   };
 
   constructor(ctx: BehaviorExecContext) {
-    this.ctx = ctx;
+    this.ctx = {
+      ...ctx,
+      emitState: (partial: BehaviorState) => {
+        this.applyState(partial);
+      },
+    };
   }
 
   onStateChange(listener: StateListener): void {
@@ -53,29 +56,21 @@ export class BehaviorExecutor {
       this.overlayBehavior.stop?.();
     }
     this.overlayBehavior = behavior;
-    this.applyState(behavior.getState());
     behavior.start(this.ctx).then(() => {
       if (this.overlayBehavior === behavior) {
         this.overlayBehavior = null;
-        this.state.speech = null;
-        this.emit();
+        this.applyState({ speech: null });
       }
     });
   }
 
   private async startMain(behavior: Behavior): Promise<void> {
     this.mainBehavior = behavior;
-    this.applyBehaviorState(behavior);
-
-    const startPromise = behavior.start(this.ctx);
-    this.applyBehaviorState(behavior);
-
-    await startPromise;
+    await behavior.start(this.ctx);
 
     if (this.mainBehavior === behavior) {
       this.mainBehavior = null;
-      this.state.animation = "idle";
-      this.emit();
+      this.applyState({ animation: "idle" });
       this.dequeueNext();
     }
   }
@@ -94,17 +89,11 @@ export class BehaviorExecutor {
     }
   }
 
-  private applyBehaviorState(behavior: Behavior): void {
-    const bs = behavior.getState();
-    if (bs.animation) this.state.animation = bs.animation;
-    if (bs.emotion) this.state.emotion = bs.emotion;
-    if (bs.energy !== undefined) this.state.energy = bs.energy;
-    if (bs.flipX !== undefined) this.state.flipX = bs.flipX;
-    this.emit();
-  }
-
   private applyState(partial: BehaviorState): void {
-    this.state = { ...this.state, ...partial };
+    if (partial.animation !== undefined) this.state.animation = partial.animation;
+    if (partial.energy !== undefined) this.state.energy = partial.energy;
+    if (partial.speech !== undefined) this.state.speech = partial.speech;
+    if (partial.flipX !== undefined) this.state.flipX = partial.flipX;
     this.emit();
   }
 

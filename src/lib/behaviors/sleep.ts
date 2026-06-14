@@ -12,8 +12,10 @@ export const sleepFactory: BehaviorFactory = {
     return {
       id: "sleep",
       interruptible: false,
-      getState: () => ({ animation: "sleep", emotion: "SLEEPY", energy: 0.2 }),
-      start: () => new Promise<void>((r) => setTimeout(r, 5000)),
+      start: (ctx) => {
+        ctx.emitState?.({ animation: "sleep", energy: 0.2 });
+        return new Promise<void>((r) => setTimeout(r, 5000));
+      },
     };
   },
 };

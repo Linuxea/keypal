@@ -12,8 +12,10 @@ export const yawnFactory: BehaviorFactory = {
     return {
       id: "yawn",
       interruptible: true,
-      getState: () => ({ animation: "yawn", emotion: "SLEEPY", energy: 0.3 }),
-      start: () => new Promise<void>((r) => setTimeout(r, 2500)),
+      start: (ctx) => {
+        ctx.emitState?.({ animation: "yawn", energy: 0.3 });
+        return new Promise<void>((r) => setTimeout(r, 2500));
+      },
     };
   },
 };

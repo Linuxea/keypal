@@ -11,21 +11,13 @@ export const walkFactory: BehaviorFactory = {
   create(params?) {
     const targetX = params?.targetX as number;
     const targetY = params?.targetY as number;
-    let flipX = false;
 
     return {
       id: "walk",
       interruptible: true,
-      getState: () => ({
-        animation: "walk",
-        emotion: "HAPPY",
-        energy: 0.7,
-        flipX,
-      }),
       start: (ctx) => {
-        if (typeof targetX === "number") {
-          flipX = targetX < ctx.position.x;
-        }
+        const flipX = typeof targetX === "number" ? targetX < ctx.position.x : false;
+        ctx.emitState?.({ animation: "walk", energy: 0.7, flipX });
         return new Promise<void>((resolve) => {
           if (ctx.moveTo && typeof targetX === "number" && typeof targetY === "number") {
             ctx.moveTo(targetX, targetY, resolve);

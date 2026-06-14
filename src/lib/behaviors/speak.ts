@@ -5,8 +5,10 @@ export function createSpeak(text: string, durationMs = 4000): Behavior {
   return {
     id: "speak",
     interruptible: true,
-    getState: () => ({ speech: text }),
-    start: () => new Promise<void>((r) => setTimeout(r, durationMs)),
+    start: (ctx) => {
+      ctx.emitState?.({ speech: text });
+      return new Promise<void>((r) => setTimeout(r, durationMs));
+    },
   };
 }
 

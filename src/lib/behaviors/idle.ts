@@ -11,8 +11,10 @@ export const idleFactory: BehaviorFactory = {
     return {
       id: "idle",
       interruptible: true,
-      getState: () => ({ animation: "idle", emotion: "IDLE", energy: 0.5 }),
-      start: () => new Promise<void>((r) => setTimeout(r, 3000)),
+      start: (ctx) => {
+        ctx.emitState?.({ animation: "idle", energy: 0.5 });
+        return new Promise<void>((r) => setTimeout(r, 3000));
+      },
     };
   },
 };
