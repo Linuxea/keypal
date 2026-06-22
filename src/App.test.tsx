@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import App from "./App";
 
 vi.mock("@tauri-apps/api/window", () => ({
@@ -36,9 +36,10 @@ describe("App", () => {
     expect(container).toBeDefined();
   });
 
-  it("renders a canvas for the pet", () => {
+  it("renders the pet as an svg", async () => {
     const { container } = render(<App />);
-    const canvas = container.querySelector("canvas");
-    expect(canvas).toBeDefined();
+    await waitFor(() => {
+      expect(container.querySelector("svg")).toBeTruthy();
+    });
   });
 });

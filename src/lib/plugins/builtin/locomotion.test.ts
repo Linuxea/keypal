@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createRegistry } from "../index";
+import { ANIMATION_IDS } from "../../animations/registry";
 
 describe("locomotionPlugin", () => {
   it("registers 4 behaviors", () => {
@@ -11,13 +12,10 @@ describe("locomotionPlugin", () => {
     expect(ids).toContain("spin");
   });
 
-  it("registers 4 animations", () => {
-    const registry = createRegistry();
-    const names = registry.getAllAnimations().map((a) => a.name);
-    expect(names).toContain("idle");
-    expect(names).toContain("walk");
-    expect(names).toContain("jump");
-    expect(names).toContain("spin");
+  it("exposes 4 locomotion animations", () => {
+    for (const id of ["idle", "walk", "jump", "spin"]) {
+      expect(ANIMATION_IDS).toContain(id);
+    }
   });
 
   it("walk factory requires params", () => {

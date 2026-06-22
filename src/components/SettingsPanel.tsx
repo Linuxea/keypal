@@ -1,16 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 import {
   AIConfig,
   AppConfig,
   INTERVAL_OPTIONS,
   IntervalSec,
   PET_KINDS,
-  PET_EMOJI,
   PET_LABELS,
   PET_SIZE_OPTIONS,
   PetKind,
   PetSize,
 } from "../lib/types";
+import { getPetArt } from "../lib/petArt";
+import { STICKER, labelStyle, inputStyle } from "../lib/ui/tokens";
 
 interface SettingsPanelProps {
   open: boolean;
@@ -20,6 +21,21 @@ interface SettingsPanelProps {
   onApplyPet: (pet: PetKind) => void;
   onApplySize: (size: PetSize) => void;
   onApplyAI: (ai: AIConfig) => void;
+}
+
+function MiniPet({ kind, active }: { kind: PetKind; active: boolean }) {
+  const art = getPetArt(kind);
+  const uid = useId().replace(/:/g, "");
+  return (
+    <svg
+      viewBox={art.viewBox}
+      width={30}
+      height={30}
+      style={{ display: "block", overflow: "visible", opacity: active ? 1 : 0.85 }}
+    >
+      {art.render(uid)}
+    </svg>
+  );
 }
 
 export function SettingsPanel({
@@ -48,12 +64,7 @@ export function SettingsPanel({
   if (!open) return null;
 
   const apply = () => {
-    const next: AppConfig = {
-      ...config,
-      pet,
-      petSize: size,
-      ai,
-    };
+    const next: AppConfig = { ...config, pet, petSize: size, ai };
     onApply(next);
     onApplyPet(pet);
     onApplySize(size);
@@ -62,175 +73,109 @@ export function SettingsPanel({
     window.setTimeout(() => setSaved(false), 1500);
   };
 
-  const overlay: React.CSSProperties = {
-    position: "fixed",
-    inset: 0,
-    background: "transparent",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10000,
-  };
-
-  const card: React.CSSProperties = {
-    width: 320,
-    background: "rgba(28, 30, 36, 0.98)",
-    color: "#eee",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 10,
-    padding: 16,
-    boxShadow: "0 12px 40px rgba(0,0,0,0.6)",
-    fontFamily: "system-ui, sans-serif",
-    fontSize: 13,
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
+  const chipBase = (on: boolean): React.CSSProperties => ({
+    flex: 1,
+    minWidth: 54,
+    border: `${STICKER.strokeWidth - 0.3}px solid ${STICKER.border}`,
+    borderRadius: 11,
+    padding: "7px 4px",
+    textAlign: "center",
     fontSize: 11,
-    color: "#9aa0a6",
-    marginTop: 10,
-    marginBottom: 4,
-    textTransform: "uppercase",
-  };
+    fontWeight: 800,
+    background: on ? STICKER.accent : STICKER.surface,
+    color: on ? "#fff" : STICKER.ink,
+    cursor: "pointer",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 2,
+  });
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "6px 8px",
-    background: "rgba(255,255,255,0.04)",
-    color: "#eee",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: 4,
-    fontSize: 13,
-    boxSizing: "border-box",
-  };
+  const pill = (on: boolean): React.CSSProperties => ({
+    flex: 1,
+    border: `${STICKER.strokeWidth - 0.3}px solid ${STICKER.border}`,
+    borderRadius: 11,
+    padding: "7px 4px",
+    textAlign: "center",
+    fontSize: 12,
+    fontWeight: 800,
+    background: on ? STICKER.accent : STICKER.surface,
+    color: on ? "#fff" : STICKER.ink,
+    cursor: "pointer",
+  });
 
   return (
-    <div style={overlay} onMouseDown={onClose}>
-      <div style={card} onMouseDown={(e) => e.stopPropagation()}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 4,
-          }}
-        >
-          <strong style={{ fontSize: 15 }}>KeyPal 设置</strong>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "transparent",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 10000,
+      }}
+      onMouseDown={onClose}
+    >
+      <div
+        style={{
+          width: 320,
+          background: STICKER.surface,
+          color: STICKER.ink,
+          border: `${STICKER.strokeWidth}px solid ${STICKER.border}`,
+          borderRadius: STICKER.radiusLg,
+          boxShadow: `0 0 0 3px ${STICKER.surface}, 0 16px 40px rgba(0,0,0,0.45)`,
+          padding: 18,
+          fontFamily: STICKER.fontFamily,
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+          <strong style={{ fontSize: 15, display: "flex", alignItems: "center", gap: 8 }}>
+            <MiniPet kind={pet} active /> KeyPal 设置
+          </strong>
           <button
             onClick={onClose}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "#888",
-              cursor: "pointer",
-              fontSize: 16,
-            }}
+            style={{ background: "transparent", border: "none", color: STICKER.muted, cursor: "pointer", fontSize: 16 }}
             aria-label="close"
           >
             ✕
           </button>
         </div>
+        <div style={{ fontSize: 10, color: STICKER.muted, fontWeight: 700, marginBottom: 6 }}>一切都在这里调</div>
 
-        <label style={labelStyle}>宠物种类</label>
+        <label style={labelStyle()}>宠物</label>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {PET_KINDS.map((k) => (
-            <button
-              key={k}
-              onClick={() => setPet(k)}
-              style={{
-                flex: "1 1 0",
-                padding: "6px 4px",
-                background: pet === k ? "rgba(120,160,255,0.2)" : "rgba(255,255,255,0.04)",
-                border:
-                  pet === k
-                    ? "1px solid rgba(120,160,255,0.6)"
-                    : "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 4,
-                color: "#eee",
-                cursor: "pointer",
-                fontSize: 12,
-              }}
-            >
-              <div style={{ fontSize: 18 }}>{PET_EMOJI[k]}</div>
-              <div>{PET_LABELS[k]}</div>
+            <button key={k} style={chipBase(pet === k)} onClick={() => setPet(k)}>
+              <MiniPet kind={k} active={pet === k} />
+              {PET_LABELS[k]}
             </button>
           ))}
         </div>
 
-        <label style={labelStyle}>宠物大小</label>
+        <label style={labelStyle()}>大小</label>
         <div style={{ display: "flex", gap: 6 }}>
           {PET_SIZE_OPTIONS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setSize(s)}
-              style={{
-                flex: 1,
-                padding: "6px",
-                background: size === s ? "rgba(120,160,255,0.2)" : "rgba(255,255,255,0.04)",
-                border:
-                  size === s
-                    ? "1px solid rgba(120,160,255,0.6)"
-                    : "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 4,
-                color: "#eee",
-                cursor: "pointer",
-                fontSize: 12,
-              }}
-            >
+            <button key={s} style={pill(size === s)} onClick={() => setSize(s)}>
               {s}px
             </button>
           ))}
         </div>
 
-        <label style={labelStyle}>AI Base URL</label>
-        <input
-          style={inputStyle}
-          value={ai.baseUrl}
-          onChange={(e) => setAi({ ...ai, baseUrl: e.target.value })}
-          placeholder="https://api.deepseek.com"
-        />
+        <label style={labelStyle()}>AI Base URL</label>
+        <input style={inputStyle()} value={ai.baseUrl} onChange={(e) => setAi({ ...ai, baseUrl: e.target.value })} placeholder="https://api.deepseek.com" />
 
-        <label style={labelStyle}>AI API Key</label>
-        <input
-          style={inputStyle}
-          type="password"
-          value={ai.apiKey}
-          onChange={(e) => setAi({ ...ai, apiKey: e.target.value })}
-          placeholder="sk-..."
-          autoComplete="off"
-        />
+        <label style={labelStyle()}>AI API Key</label>
+        <input style={inputStyle()} type="password" value={ai.apiKey} onChange={(e) => setAi({ ...ai, apiKey: e.target.value })} placeholder="sk-..." autoComplete="off" />
 
-        <label style={labelStyle}>模型名</label>
-        <input
-          style={inputStyle}
-          value={ai.model}
-          onChange={(e) => setAi({ ...ai, model: e.target.value })}
-          placeholder="deepseek-chat"
-        />
+        <label style={labelStyle()}>模型名</label>
+        <input style={inputStyle()} value={ai.model} onChange={(e) => setAi({ ...ai, model: e.target.value })} placeholder="deepseek-chat" />
 
-        <label style={labelStyle}>分析触发间隔</label>
+        <label style={labelStyle()}>思考间隔</label>
         <div style={{ display: "flex", gap: 6 }}>
           {INTERVAL_OPTIONS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setAi({ ...ai, intervalSec: s as IntervalSec })}
-              style={{
-                flex: 1,
-                padding: "6px",
-                background:
-                  ai.intervalSec === s
-                    ? "rgba(120,160,255,0.2)"
-                    : "rgba(255,255,255,0.04)",
-                border:
-                  ai.intervalSec === s
-                    ? "1px solid rgba(120,160,255,0.6)"
-                    : "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 4,
-                color: "#eee",
-                cursor: "pointer",
-                fontSize: 12,
-              }}
-            >
+            <button key={s} style={pill(ai.intervalSec === s)} onClick={() => setAi({ ...ai, intervalSec: s as IntervalSec })}>
               {s}s
             </button>
           ))}
@@ -241,13 +186,14 @@ export function SettingsPanel({
             onClick={apply}
             style={{
               flex: 1,
-              padding: "8px",
-              background: "rgba(120,160,255,0.25)",
-              border: "1px solid rgba(120,160,255,0.6)",
-              borderRadius: 4,
-              color: "#eee",
+              padding: "9px",
+              background: STICKER.accent,
+              border: `${STICKER.strokeWidth - 0.3}px solid ${STICKER.border}`,
+              borderRadius: 11,
+              color: "#fff",
               cursor: "pointer",
-              fontWeight: 600,
+              fontWeight: 800,
+              fontSize: 12,
             }}
           >
             {saved ? "已保存 ✓" : "保存"}
@@ -256,12 +202,14 @@ export function SettingsPanel({
             onClick={onClose}
             style={{
               flex: 1,
-              padding: "8px",
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 4,
-              color: "#eee",
+              padding: "9px",
+              background: STICKER.surface,
+              border: `${STICKER.strokeWidth - 0.3}px solid ${STICKER.border}`,
+              borderRadius: 11,
+              color: STICKER.ink,
               cursor: "pointer",
+              fontWeight: 800,
+              fontSize: 12,
             }}
           >
             关闭

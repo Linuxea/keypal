@@ -34,13 +34,6 @@ describe("useBehavior", () => {
     expect(result.current.flipX).toBe(false);
   });
 
-  it("returns animations from registry", () => {
-    const { result } = renderHook(() => useBehavior(mockAiConfig, "cat", "小咪"));
-    expect(result.current.animations.length).toBeGreaterThan(0);
-    expect(result.current.animations.some((a) => a.name === "idle")).toBe(true);
-    expect(result.current.animations.some((a) => a.name === "walk")).toBe(true);
-  });
-
   it("setPosition and setScreenSize do not throw", () => {
     const { result } = renderHook(() => useBehavior(mockAiConfig, "cat", "小咪"));
     act(() => {

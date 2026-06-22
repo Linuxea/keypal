@@ -1,12 +1,7 @@
-import { walkDefinition } from "../actions/walk";
 import { BehaviorFactory } from "../plugins/types";
 
 export const walkFactory: BehaviorFactory = {
   id: "walk",
-  animation: {
-    frameCount: walkDefinition.frameCount,
-    draw: walkDefinition.draw,
-  },
   requiresParams: "targetX (0到screenWidth), targetY (0到screenHeight)",
   create(params?) {
     const targetX = params?.targetX as number;

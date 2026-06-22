@@ -1,13 +1,7 @@
 import { BehaviorFactory } from "../plugins/types";
-import { yawnDefinition } from "../actions/yawn";
 
 export const yawnFactory: BehaviorFactory = {
   id: "yawn",
-  animation: {
-    frameCount: yawnDefinition.frameCount,
-    tint: yawnDefinition.tint,
-    draw: yawnDefinition.draw,
-  },
   create() {
     return {
       id: "yawn",

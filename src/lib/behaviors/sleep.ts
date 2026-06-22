@@ -1,13 +1,7 @@
 import { BehaviorFactory } from "../plugins/types";
-import { sleepDefinition } from "../actions/sleep";
 
 export const sleepFactory: BehaviorFactory = {
   id: "sleep",
-  animation: {
-    frameCount: sleepDefinition.frameCount,
-    tint: sleepDefinition.tint,
-    draw: sleepDefinition.draw,
-  },
   create() {
     return {
       id: "sleep",

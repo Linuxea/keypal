@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createRegistry } from "../index";
+import { ANIMATION_IDS } from "../../animations/registry";
 
 describe("restPlugin", () => {
   it("registers yawn, sleep, and snore behaviors", () => {
@@ -10,12 +11,10 @@ describe("restPlugin", () => {
     expect(ids).toContain("snore");
   });
 
-  it("registers yawn, sleep, and snore animations", () => {
-    const registry = createRegistry();
-    const names = registry.getAllAnimations().map((a) => a.name);
-    expect(names).toContain("yawn");
-    expect(names).toContain("sleep");
-    expect(names).toContain("snore");
+  it("exposes yawn, sleep, and snore animations", () => {
+    for (const id of ["yawn", "sleep", "snore"]) {
+      expect(ANIMATION_IDS).toContain(id);
+    }
   });
 
   it("sleep behavior is not interruptible", () => {

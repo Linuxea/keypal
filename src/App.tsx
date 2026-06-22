@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pet } from "./components/Pet";
+import { PetView } from "./components/PetView";
 import { ContextMenu } from "./components/ContextMenu";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SpeechBubble } from "./components/SpeechBubble";
+import { HoverToolbar } from "./components/HoverToolbar";
 import { useBehavior } from "./hooks/useBehavior";
 import { useDrag } from "./hooks/useDrag";
 import { configStore } from "./lib/config";
 import { log } from "./lib/log";
+import { getPetArt } from "./lib/petArt";
 import {
   AIConfig,
   AppConfig,
@@ -20,13 +22,16 @@ export default function App() {
   const [config, setConfig] = useState<AppConfig>(DEFAULT_CONFIG);
   const [loaded, setLoaded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({
-    x: 0,
-    y: 0,
-  });
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [quiet, setQuiet] = useState(false);
 
   const behavior = useBehavior(config.ai, config.pet);
+
+  useEffect(() => {
+    behavior.setActive(!quiet);
+  }, [quiet, behavior]);
 
   useEffect(() => {
     (async () => {
@@ -40,15 +45,11 @@ export default function App() {
         const factor = await w.scaleFactor();
         const winSize = await w.outerSize();
         if (cfg.position) {
-          await w.setPosition(
-            new win.LogicalPosition(cfg.position.x, cfg.position.y),
-          );
+          await w.setPosition(new win.LogicalPosition(cfg.position.x, cfg.position.y));
         }
         const { width: targetW, height: targetH } = windowSizeForPet(cfg.petSize);
         if (Math.abs(winSize.toLogical(factor).width - targetW) > 2) {
-          await w.setSize(
-            new win.LogicalSize(targetW, targetH),
-          );
+          await w.setSize(new win.LogicalSize(targetW, targetH));
         }
         behavior.setScreenSize(window.screen.width, window.screen.height);
       } catch (err) {
@@ -56,6 +57,7 @@ export default function App() {
       }
       await log("app", `===== KeyPal ready pet=${cfg.pet} apiKey=${cfg.ai.apiKey ? "(set)" : "(empty)"} =====`);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -102,9 +104,15 @@ export default function App() {
     setMenuOpen(true);
   }, []);
 
-  if (!loaded) {
-    return null;
-  }
+  const onQuit = useCallback(() => {
+    import("@tauri-apps/api/core")
+      .then((m) => m.invoke("exit_app"))
+      .catch((err) => console.error(err));
+  }, []);
+
+  if (!loaded) return null;
+
+  const tint = getPetArt(config.pet).palette.body;
 
   return (
     <div
@@ -122,7 +130,7 @@ export default function App() {
       <div
         style={{
           position: "absolute",
-          bottom: config.petSize + 24,
+          bottom: config.petSize + (hovered ? 64 : 28),
           left: 0,
           right: 0,
           display: "flex",
@@ -130,22 +138,42 @@ export default function App() {
           pointerEvents: "none",
         }}
       >
-        <SpeechBubble text={behavior.currentSpeech} />
+        <SpeechBubble text={behavior.currentSpeech} tint={tint} />
       </div>
 
-      <div style={{ pointerEvents: "auto", position: "relative" }}>
-        <Pet
+      <div
+        style={{
+          pointerEvents: "auto",
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        {hovered && (
+          <div style={{ pointerEvents: "auto" }}>
+            <HoverToolbar
+              pet={config.pet}
+              quiet={quiet}
+              onPickPet={onPickPet}
+              onOpenSettings={() => setSettingsOpen(true)}
+              onToggleQuiet={() => setQuiet((q) => !q)}
+              onQuit={onQuit}
+            />
+          </div>
+        )}
+
+        <PetView
           pet={config.pet}
-          animations={behavior.animations}
-          currentAnimation={behavior.currentAnimation}
+          animation={behavior.currentAnimation}
           energy={behavior.energy}
           size={config.petSize}
           flipX={behavior.flipX}
           onContextMenu={onContextMenu}
           onMouseDown={(e) => {
-            if (e.button === 0) {
-              void startDrag(e);
-            }
+            if (e.button === 0) void startDrag(e);
           }}
         />
       </div>

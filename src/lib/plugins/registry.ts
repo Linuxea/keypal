@@ -1,5 +1,4 @@
 import {
-  AnimationRegistration,
   BehaviorFactory,
   EmotionRegistration,
   PetPlugin,
@@ -9,7 +8,6 @@ import { Behavior } from "../behaviors/types";
 export class PluginRegistry {
   private plugins = new Map<string, PetPlugin>();
   private behaviors = new Map<string, BehaviorFactory>();
-  private animations = new Map<string, AnimationRegistration>();
   private emotions = new Map<string, EmotionRegistration>();
   private speechPool: string[] = [];
 
@@ -26,20 +24,6 @@ export class PluginRegistry {
           );
         }
         this.behaviors.set(factory.id, factory);
-
-        if (factory.animation) {
-          if (this.animations.has(factory.id)) {
-            throw new Error(
-              `Animation "${factory.id}" already registered by another plugin`,
-            );
-          }
-          this.animations.set(factory.id, {
-            name: factory.id,
-            frameCount: factory.animation.frameCount,
-            tint: factory.animation.tint,
-            draw: factory.animation.draw,
-          });
-        }
       }
     }
 
@@ -68,7 +52,6 @@ export class PluginRegistry {
     if (plugin.behaviors) {
       for (const factory of plugin.behaviors) {
         this.behaviors.delete(factory.id);
-        this.animations.delete(factory.id);
       }
     }
     if (plugin.emotions) {
@@ -91,14 +74,6 @@ export class PluginRegistry {
 
   getAllBehaviors(): BehaviorFactory[] {
     return [...this.behaviors.values()];
-  }
-
-  getAnimation(name: string): AnimationRegistration | undefined {
-    return this.animations.get(name);
-  }
-
-  getAllAnimations(): AnimationRegistration[] {
-    return [...this.animations.values()];
   }
 
   getEmotion(name: string): EmotionRegistration | undefined {

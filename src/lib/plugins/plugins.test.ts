@@ -19,11 +19,6 @@ describe("plugin integration", () => {
     expect(registry.getAllBehaviors()).toHaveLength(7);
   });
 
-  it("has 7 animations from behaviors", () => {
-    const registry = createRegistry();
-    expect(registry.getAllAnimations()).toHaveLength(7);
-  });
-
   it("buildSystemPrompt includes all plugin contributions", () => {
     const registry = createRegistry();
     const prompt = registry.buildSystemPrompt();

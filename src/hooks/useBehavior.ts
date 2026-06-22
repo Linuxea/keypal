@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { BrainEngine } from "../lib/brainEngine";
 import { PluginRegistry } from "../lib/plugins/registry";
-import { AnimationRegistration } from "../lib/plugins/types";
 import { createRegistry } from "../lib/plugins";
 import { createWalkController, WalkController } from "../lib/walkController";
 import { BehaviorExecutor, ExecutorState } from "../lib/behaviorExecutor";
@@ -13,7 +12,11 @@ export interface BehaviorState {
   currentSpeech: string | null;
   energy: number;
   flipX: boolean;
-  animations: AnimationRegistration[];
+}
+
+interface LoopController {
+  start: () => void;
+  stop: () => void;
 }
 
 export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: string = "小咪") {
@@ -25,22 +28,15 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
   const lastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const aiConfigRef = useRef(aiConfig);
   aiConfigRef.current = aiConfig;
+  const loopRef = useRef<LoopController | null>(null);
+  const activeRef = useRef(true);
 
   const [state, setState] = useState<BehaviorState>({
     currentAnimation: "idle",
     currentSpeech: null,
     energy: 0.5,
     flipX: false,
-    animations: [],
   });
-
-  useEffect(() => {
-    const registry = registryRef.current;
-    setState((s) => ({
-      ...s,
-      animations: registry.getAllAnimations(),
-    }));
-  }, []);
 
   useEffect(() => {
     const registry = registryRef.current;
@@ -118,9 +114,7 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
       }
     });
 
-    if (aiConfigRef.current.apiKey) {
-      brain.start();
-    } else {
+    const startLocalTick = () => {
       const tick = () => {
         const behaviors = registry.getAllBehaviors().filter((b) => b.id !== "idle");
         const factory = behaviors[Math.floor(Math.random() * behaviors.length)];
@@ -134,7 +128,26 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
       };
       tick();
       localTimerRef.current = setInterval(tick, aiConfigRef.current.intervalSec * 1000);
-    }
+    };
+
+    loopRef.current = {
+      start: () => {
+        if (aiConfigRef.current.apiKey) {
+          brain.start();
+        } else {
+          startLocalTick();
+        }
+      },
+      stop: () => {
+        brain.stop();
+        if (localTimerRef.current) {
+          clearInterval(localTimerRef.current);
+          localTimerRef.current = null;
+        }
+      },
+    };
+
+    if (activeRef.current) loopRef.current.start();
 
     return () => {
       brain.stop();
@@ -151,33 +164,9 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
     const brain = brainRef.current;
     if (!brain) return;
 
-    brain.stop();
-    if (localTimerRef.current) {
-      clearInterval(localTimerRef.current);
-      localTimerRef.current = null;
-    }
-
+    loopRef.current?.stop();
     brain.updateAi(aiConfig);
-
-    if (aiConfig.apiKey) {
-      brain.start();
-    } else {
-      const executor = executorRef.current!;
-      const registry = registryRef.current;
-      const tick = () => {
-        const behaviors = registry.getAllBehaviors().filter((b) => b.id !== "idle");
-        const factory = behaviors[Math.floor(Math.random() * behaviors.length)];
-        const params: Record<string, unknown> = {};
-        if (factory.id === "walk") {
-          params.targetX = 100 + Math.floor(Math.random() * (window.screen.width - 200));
-          params.targetY = 100 + Math.floor(Math.random() * (window.screen.height - 200));
-        }
-        const behavior = registry.createBehavior(factory.id, params);
-        if (behavior) executor.enqueue(behavior);
-      };
-      tick();
-      localTimerRef.current = setInterval(tick, aiConfig.intervalSec * 1000);
-    }
+    if (activeRef.current) loopRef.current?.start();
   }, [aiConfig.apiKey, aiConfig.intervalSec]);
 
   const setPosition = useCallback((x: number, y: number) => {
@@ -189,9 +178,21 @@ export function useBehavior(aiConfig: AIConfig, pet: PetKind = "cat", petName: s
     brainRef.current?.setScreenSize(w, h);
   }, []);
 
+  const setActive = useCallback((active: boolean) => {
+    if (active === activeRef.current) return;
+    activeRef.current = active;
+    if (active) {
+      loopRef.current?.start();
+    } else {
+      loopRef.current?.stop();
+      executorRef.current?.stop();
+    }
+  }, []);
+
   return {
     ...state,
     setPosition,
     setScreenSize,
+    setActive,
   };
 }

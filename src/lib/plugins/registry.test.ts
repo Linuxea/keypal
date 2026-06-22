@@ -3,10 +3,7 @@ import { PluginRegistry } from "./registry";
 import { PetPlugin } from "./types";
 
 function makePlugin(overrides: Partial<PetPlugin> = {}): PetPlugin {
-  return {
-    id: "test-plugin",
-    ...overrides,
-  };
+  return { id: "test-plugin", ...overrides };
 }
 
 describe("PluginRegistry", () => {
@@ -22,26 +19,19 @@ describe("PluginRegistry", () => {
     expect(() => registry.register(makePlugin())).toThrow("already registered");
   });
 
-  it("registers behaviors and their animations", () => {
+  it("registers behaviors", () => {
     const registry = new PluginRegistry();
     registry.register(
       makePlugin({
         behaviors: [
           {
             id: "jump",
-            animation: { frameCount: 4, draw: () => {} },
-            create: () => ({
-              id: "jump",
-              interruptible: true,
-              start: () => Promise.resolve(),
-            }),
+            create: () => ({ id: "jump", interruptible: true, start: () => Promise.resolve() }),
           },
         ],
       }),
     );
     expect(registry.getBehavior("jump")).toBeDefined();
-    expect(registry.getAnimation("jump")).toBeDefined();
-    expect(registry.getAnimation("jump")!.frameCount).toBe(4);
   });
 
   it("throws on duplicate behavior id", () => {
@@ -52,11 +42,7 @@ describe("PluginRegistry", () => {
         behaviors: [
           {
             id: "jump",
-            animation: { frameCount: 4, draw: () => {} },
-            create: () => ({
-              id: "jump", interruptible: true,
-              start: () => Promise.resolve(),
-            }),
+            create: () => ({ id: "jump", interruptible: true, start: () => Promise.resolve() }),
           },
         ],
       }),
@@ -68,10 +54,7 @@ describe("PluginRegistry", () => {
           behaviors: [
             {
               id: "jump",
-              create: () => ({
-                id: "jump", interruptible: true,
-                start: () => Promise.resolve(),
-              }),
+              create: () => ({ id: "jump", interruptible: true, start: () => Promise.resolve() }),
             },
           ],
         }),
@@ -86,11 +69,7 @@ describe("PluginRegistry", () => {
         behaviors: [
           {
             id: "wave",
-            create: () => ({
-              id: "wave",
-              interruptible: true,
-              start: () => Promise.resolve(),
-            }),
+            create: () => ({ id: "wave", interruptible: true, start: () => Promise.resolve() }),
           },
         ],
       }),
@@ -103,27 +82,15 @@ describe("PluginRegistry", () => {
   it("registers emotions", () => {
     const registry = new PluginRegistry();
     registry.register(
-      makePlugin({
-        emotions: [{ name: "HAPPY", tint: "#fff7a8", defaultEnergy: 0.8 }],
-      }),
+      makePlugin({ emotions: [{ name: "HAPPY", tint: "#fff7a8", defaultEnergy: 0.8 }] }),
     );
     expect(registry.getEmotion("HAPPY")).toBeDefined();
   });
 
   it("collects speechPool from plugins", () => {
     const registry = new PluginRegistry();
-    registry.register(
-      makePlugin({
-        id: "a",
-        speechPool: ["hello", "hi"],
-      }),
-    );
-    registry.register(
-      makePlugin({
-        id: "b",
-        speechPool: ["bye"],
-      }),
-    );
+    registry.register(makePlugin({ id: "a", speechPool: ["hello", "hi"] }));
+    registry.register(makePlugin({ id: "b", speechPool: ["bye"] }));
     expect(registry.getSpeechPool()).toHaveLength(3);
     expect(registry.getSpeechPool()).toContain("hello");
     expect(registry.getSpeechPool()).toContain("bye");
@@ -136,11 +103,7 @@ describe("PluginRegistry", () => {
         behaviors: [
           {
             id: "dance",
-            animation: { frameCount: 6, draw: () => {} },
-            create: () => ({
-              id: "dance", interruptible: true,
-              start: () => Promise.resolve(),
-            }),
+            create: () => ({ id: "dance", interruptible: true, start: () => Promise.resolve() }),
           },
         ],
       }),
@@ -148,23 +111,12 @@ describe("PluginRegistry", () => {
     registry.unregister("test-plugin");
     expect(registry.getPlugin("test-plugin")).toBeUndefined();
     expect(registry.getBehavior("dance")).toBeUndefined();
-    expect(registry.getAnimation("dance")).toBeUndefined();
   });
 
   it("buildSystemPrompt chains plugin augmentations", () => {
     const registry = new PluginRegistry();
-    registry.register(
-      makePlugin({
-        id: "a",
-        augmentSystemPrompt: (base) => base + "A",
-      }),
-    );
-    registry.register(
-      makePlugin({
-        id: "b",
-        augmentSystemPrompt: (base) => base + "B",
-      }),
-    );
+    registry.register(makePlugin({ id: "a", augmentSystemPrompt: (base) => base + "A" }));
+    registry.register(makePlugin({ id: "b", augmentSystemPrompt: (base) => base + "B" }));
     expect(registry.buildSystemPrompt()).toBe("AB");
   });
 });
